@@ -1,20 +1,12 @@
 import json
-from dash import Dash, html, dcc, Input, Output
+import base64
+import io
+from dash import Dash, html, dcc, Input, Output, State
 import pandas as pd
 import numpy as np
 import datetime
 import plotly.express as px
 
-
-data = pd.read_csv("moxy_data.csv", header=2)
-
-# get the current year
-today = datetime.date.today()
-year = today.year
-
-# format the date
-data["Date"] = pd.to_datetime(
-    str(year) + "-" + data["mm-dd"] + "-" + data["hh:mm:ss"], format="%Y-%m-%d-%H:%M:%S")
 
 external_stylesheets = [
     {
@@ -37,7 +29,7 @@ app.layout = html.Div(
                 html.H1(children="Moxy app", className="header-title"),
                 html.P(
                     children="Analyse d'un fichier moxy", className="header-description"
-                )
+                ),
             ],
             className="header"
         ),
@@ -45,16 +37,16 @@ app.layout = html.Div(
         # menu
         html.Div(
             children=[
+                dcc.Upload(
+                    id='upload-data',
+                    children=html.Button('Upload File'),
+                ),
                 html.Div(
                     children=[
                         html.Div(children="Session", className="menu-title"),
                         dcc.Dropdown(
                             id="session-filter",
-                            options=[
-                                {"label": session, "value": session}
-                                for session in np.sort(data["Session Ct"].unique())
-                            ],
-                            value=data["Session Ct"][0],
+                            # value=data["Session Ct"][0],
                             clearable=False,
                             className="dropdown",
                         ),
@@ -69,7 +61,7 @@ app.layout = html.Div(
             children=[
                 html.H2("Courbe de la session entière"),
                 html.P(
-                    "Sélectionnez un champ de données avec l'outil sélection en haut à gauche"),
+                    "Sélectionnez un champ de données avec l'outil sélection en haut à droite"),
                 html.Div(
                     children=dcc.Graph(
                         id="moxy-chart"
@@ -82,6 +74,7 @@ app.layout = html.Div(
         ),
         html.Div(
             children=[
+                html.H1("Visualisation de la sélection"),
                 html.Div(
                     children=dcc.Graph(
                         id="zoom-chart"
@@ -92,15 +85,55 @@ app.layout = html.Div(
             ],
             className="wrapper"
         ),
-        html.P(id='selected-data')
+        html.P(id='selected-data'),
+
+        # dcc.Store stores the intermediate value
+        dcc.Store(id='file-data'),
     ])
 
 
 @app.callback(
-    Output("moxy-chart", "figure"),
-    Input("session-filter", "value")
+    Output('file-data', 'data'),
+    Input('upload-data', 'contents'),
+    prevent_initial_call=True
 )
-def update_charts(session):
+def update_data(uploadData):
+
+    content_type, content_string = uploadData.split(",")
+    decoded = base64.b64decode(content_string)
+
+    data = pd.read_csv(io.StringIO(decoded.decode("utf-8")), header=2)
+
+    # get the current year
+    today = datetime.date.today()
+    year = today.year
+
+    # format the date
+    data["Date"] = pd.to_datetime(
+        str(year) + "-" + data["mm-dd"] + "-" + data["hh:mm:ss"], format="%Y-%m-%d-%H:%M:%S")
+
+    return data.to_json()
+
+
+@app.callback(
+    Output('session-filter', 'options'),
+    Output('session-filter', 'value'),
+    Input('file-data', 'data'),
+    prevent_initial_call=True)
+def update_dropdown(data):
+    data = pd.read_json(data)
+    options = [{"label": session, "value": session}
+               for session in np.sort(data["Session Ct"].unique())]
+    return options, data["Session Ct"][0]
+
+
+@app.callback(
+    Output("moxy-chart", "figure"),
+    Input("session-filter", "value"),
+    State('file-data', 'data'),
+    prevent_initial_call=True)
+def update_charts(session, data):
+    data = pd.read_json(data)
     mask = (
         (data["Session Ct"] == session)
     )
@@ -119,9 +152,11 @@ def update_charts(session):
 
 @ app.callback(
     Output("zoom-chart", "figure"),
-    Input("moxy-chart", "selectedData")
-)
-def display(selectedData):
+    Input("moxy-chart", "selectedData"),
+    State('file-data', 'data'),
+    prevent_initial_call=True)
+def display(selectedData, data):
+    data = pd.read_json(data)
     selected_dates = []
     if selectedData and selectedData['points']:
         for point in selectedData["points"]:
@@ -135,7 +170,7 @@ def display(selectedData):
         fig2.update_yaxes(type='linear')
 
         fig2.update_layout(clickmode='event+select')
-    return fig2 if fig2 else None
+        return fig2
 
 
 if __name__ == '__main__':
