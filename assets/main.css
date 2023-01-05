@@ -1,0 +1,32 @@
+.center {
+    text-align: center;
+  }
+
+.Select-control {
+    width: 256px;
+    height: 58px;
+}
+
+.Select-value{
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.Select--single > .Select-control .Select-value, .Select-placeholder {
+    line-height: 48px;
+}
+
+.Select--multi .Select-value-label {
+    line-height: 32px;
+}
+.menu {
+    display: grid;
+    justify-content: center;
+    padding-top: 24px;
+    text-align: center;
+}
+.menu-title {
+    margin-top: 20px;
+    margin-bottom: 0;
+    font-weight: bold;
+}
