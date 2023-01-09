@@ -4,10 +4,19 @@ import dash
 from dash import Dash, html, dcc, Input, Output, State, callback
 import pandas as pd
 import numpy as np
-import datetime
 import plotly.express as px
+import re
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.io as pio
 
 dash.register_page(__name__)
+
+pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
+pio.templates["plotly_dark_custom"]['layout']['paper_bgcolor'] = '#141e26'
+pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
+pio.templates.default = "plotly_dark_custom"
+
 
 layout = html.Div(
     children=[
@@ -27,21 +36,20 @@ layout = html.Div(
         # menu
         html.Article(
             children=[
+                html.P('Charger les fichiers DataAverage.xlsx et Details.txt'),
                 dcc.Upload(
-                    id='upload-xlsx',
-                    children=html.Button('Upload DataAverage.xlsx File'),
-
+                    id='upload',
+                    children=html.Button(
+                        'Upload'),
+                    # Allow multiple files to be uploaded
+                    multiple=True
                 ),
-                dcc.Upload(
-                    id='upload-txt',
-                    children=html.Button('Upload Details.txt File'),
-                )
             ],
             className="menu",
         ),
 
         # graphs
-        html.Div(
+        html.Article(
             children=[
                 html.H2("Courbe des groupes musculaires"),
                 html.Div(
@@ -55,52 +63,64 @@ layout = html.Div(
             className="wrapper"
         ),
         # dcc.Store stores the file data
-        dcc.Store(id='xlsx-data'),
-        dcc.Store(id='txt-data'),
+        dcc.Store(id='data_upload', storage_type='session'),
     ])
 
 
 @callback(
-    Output('xlsx-data', 'data'),
-    [Input("upload-xlsx", "contents"), Input("upload-xlsx", "filename")],
+    Output('data_upload', 'data'),
+    [Input("upload", "contents"), Input("upload", "filename")],
     prevent_initial_call=True
 )
-def update_xlsx(content, filename):
-    data = parse_data(content, filename)
-    print(type(data))
-    return data.to_json()
+def update(contents, filenames):
+    if 'Details.txt' in filenames:
+        t_id = filenames.index('Details.txt')
+        x_id = filenames.index('DataAverage.xlsx')
+        data = []
+        for content, filename in zip(contents, filenames):
+            data.append(parse_data(content, filename))
 
+        smo_cols = [col for col in data[x_id].columns if 'SmO2' in col]
 
-@callback(
-    Output('txt-data', 'data'),
-    [Input("upload-txt", "contents"), Input("upload-txt", "filename")],
-    prevent_initial_call=True
-)
-def update_txt(content, filename):
-    data = parse_data(content, filename)
-    print("les données" + data)
-    # return data.to_json()
+        col_names = dict(zip(smo_cols, data[t_id]))
+
+        data[x_id].rename(columns=col_names, inplace=True)
+
+        # check if the elements are in the right order
+        if t_id == 0:
+            data[0], data[1] = data[1], data[0]
+        data[0].replace(0, np.nan, inplace=True)
+        data[0] = data[0].to_json()
+        return [data[0], data[1]]
 
 
 @callback(
     Output('test-chart', 'figure'),
-    Input('xlsx-data', 'data'),
-    prevent_initial_call=True
+    Input('data_upload', 'data')
 )
 def update_graph(data):
-    data = pd.read_json(data)
-    print(data)
+    data[0] = pd.read_json(data[0])
 
-    fig = px.scatter(data, x="Time[s]", y="SmO2 -  3[%]")
-    fig.add_scatter(x=data["Time[s]"], y=data["SmO2 -  4[%]"])
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    for n in data[1]:
+        fig.add_trace(go.Scatter(
+            x=data[0]["Time[s]"], y=data[0][n], name=n), secondary_y=False)
+
+    fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["HR[bpm]"],
+                             name="HR"), secondary_y=True)
 
     fig.update_traces(mode='lines+markers',
                       hovertemplate="%{y:.2f}%<extra></extra>", marker_size=1)
-    fig.update_xaxes(showgrid=False)
+    fig.update_xaxes(showgrid=False, title="Temps")
 
-    fig.update_yaxes(type='linear')
+    fig.update_yaxes(title_text="Desoxygenation", secondary_y=False)
+    fig.update_yaxes(title_text="Heart Rate", secondary_y=True)
 
-    fig.update_layout(clickmode='event+select')
+    fig.update_layout(
+        clickmode='event+select',
+        height=500,
+        margin=dict(l=20, r=20, t=30, b=20))
     return fig
 
 
@@ -112,9 +132,12 @@ def parse_data(content, filename):
         if "xlsx" in filename:
             # Assume that the user uploaded an excel file
             return pd.read_excel(io.BytesIO(decoded))
-        elif "txt" or "tsv" in filename:
-            # return the file in a raw form
-            io.StringIO(decoded.decode("utf-8"))
+
+        elif "Details.txt" in filename:
+            file = decoded.decode('utf-8')
+            m = re.findall("\) - ([\w\s+]+)\n", file)
+            return m
+
     except Exception as e:
         print(e)
         return html.Div(["There was an error processing this file."])

@@ -1,7 +1,18 @@
+from flask import Flask, redirect
 import dash
 from dash import html
 
+server = Flask(__name__)
+
+
+@server.route('/')
+def index_redirect():
+    return redirect('/analyse-test')
+
+
 app = dash.Dash(
+    __name__,
+    server=server,
     use_pages=True
 )
 

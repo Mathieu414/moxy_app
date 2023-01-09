@@ -7,7 +7,7 @@ import numpy as np
 import datetime
 import plotly.express as px
 
-dash.register_page(__name__)
+dash.register_page(__name__,)
 
 layout = html.Div(
     children=[
