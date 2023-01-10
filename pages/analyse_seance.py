@@ -7,6 +7,10 @@ import numpy as np
 import datetime
 import plotly.express as px
 import plotly.io as pio
+import plotly.graph_objects as go
+import scipy
+
+from scipy import signal
 
 dash.register_page(__name__,)
 
@@ -63,16 +67,16 @@ layout = html.Div(
         ),
         html.Div(
             children=[
-                html.H1("Visualisation de la sélection"),
-                html.Div(
-                    children=dcc.Graph(
-                        id="zoom-chart",
-                        figure={
-                            'layout':
+                html.Article(
+                    children=[
+                        html.H1("Visualisation de la sélection"),
+                        dcc.Graph(
+                            id="zoom-chart",
+                            figure={
+                                'layout':
                                 pio.templates["plotly_dark_custom"].layout
-                        }
-                    ),
-                    className="card"
+                            }
+                        )]
                 )
 
             ],
@@ -80,7 +84,7 @@ layout = html.Div(
         ),
 
         # dcc.Store stores the intermediate value
-        dcc.Store(id='file-data'),
+        dcc.Store(id='file-data', storage_type='session'),
     ])
 
 
@@ -110,8 +114,7 @@ def update_data(uploadData):
 @ callback(
     Output('session-filter', 'options'),
     Output('session-filter', 'value'),
-    Input('file-data', 'data'),
-    prevent_initial_call=True)
+    Input('file-data', 'data'))
 def update_dropdown(data):
     data = pd.read_json(data)
     options = [{"label": session, "value": session}
@@ -122,8 +125,7 @@ def update_dropdown(data):
 @callback(
     Output("moxy-chart", "figure"),
     Input("session-filter", "value"),
-    State('file-data', 'data'),
-    prevent_initial_call=True)
+    State('file-data', 'data'))
 def update_charts(session, data):
     data = pd.read_json(data)
     mask = (
@@ -154,9 +156,14 @@ def display(selectedData, data):
         for point in selectedData["points"]:
             selected_dates.append(point['x'])
         filtered_df = data.query("Date == @selected_dates")
-        fig2 = px.scatter(filtered_df, x='Date', y='SmO2 Live')
+        fig2 = go.Figure()
+        fig2.add_trace(go.Scatter(
+            x=filtered_df['Date'],
+            y=signal.savgol_filter(filtered_df['SmO2 Live'],
+                                   50,  # window size used for filtering
+                                   3))),  # order of fitted polynomial)
         fig2.update_traces(mode='lines+markers',
-                           hovertemplate="%{y:.2f}%<extra></extra>", marker_size=10)
+                           hovertemplate="%{y:.2f}%<extra></extra>", marker_size=1)
         fig2.update_xaxes(showgrid=False)
 
         fig2.update_yaxes(type='linear')
