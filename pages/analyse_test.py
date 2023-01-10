@@ -112,14 +112,13 @@ def update_graph(data, seuil1, seuil2):
 
     for n in data[1]:
         fig.add_trace(go.Scatter(
-            x=data[0]["Time[s]"], y=data[0][n], name=n), secondary_y=False)
+            x=data[0]["Time[s]"], y=data[0][n], name=n,  hovertemplate="%{y:.2f} %<extra></extra>"), secondary_y=False)
 
     if "HR[bpm]" in data[0].columns:
         fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["HR[bpm]"],
-                                 name="HR"), secondary_y=True)
+                                 name="HR", hovertemplate="%{y:.2f} bpm<extra></extra>"), secondary_y=True)
 
-    fig.update_traces(mode='lines+markers',
-                      hovertemplate="%{y:.2f}%<extra></extra>", marker_size=1)
+    fig.update_traces(mode='lines+markers', marker_size=1)
     fig.update_xaxes(showgrid=False, title="Temps")
 
     fig.update_yaxes(title_text="Desoxygenation", secondary_y=False)
@@ -164,13 +163,13 @@ def parse_data(content, filename):
 def add_graph(data):
     data[0] = pd.read_json(data[0])
     if "HR[bpm]" in data[0].columns:
-        children = []
+        children = [html.H2("Desoxygénation musculaire en fonction du HR")]
         for n in data[1]:
             fig = px.scatter(x=data[0]["HR[bpm]"],
                              y=data[0][n], marginal_y="violin",
                              labels=dict(x="HR", y="Desoxygenation " + n))
 
-            children.extend([html.H2("Desoxygénation " + n + " en fonction du HR"),
+            children.extend([html.H4(n),
                              html.Div(
                 children=dcc.Graph(
                             id="hr-" + n,
