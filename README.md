@@ -9,25 +9,25 @@ First clone this github repository, then `cd` into the repository.
 Then run in the terminal :
 
 ```
-python -m venv .
+python -m venv venv
 ```
 
 **On Ubuntu/Mac (other than M1) :**
 
 ```
-source bin/activate
+source venv/bin/activate
 ```
 
 **Windows :**
 
 ```
-.\Scripts\activate
+.\venv\Scripts\activate
 ```
 
 or if using Git Bash :
 
 ```
-. Scripts/activate
+. venv/Scripts/activate
 ```
 
 Then run
