@@ -6,8 +6,14 @@ import pandas as pd
 import numpy as np
 import datetime
 import plotly.express as px
+import plotly.io as pio
 
 dash.register_page(__name__,)
+
+pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
+pio.templates["plotly_dark_custom"]['layout']['paper_bgcolor'] = '#141e26'
+pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
+pio.templates.default = "plotly_dark_custom"
 
 layout = html.Div(
     children=[
@@ -43,7 +49,11 @@ layout = html.Div(
                     "Sélectionnez un champ de données avec l'outil sélection en haut à droite"),
                 html.Div(
                     children=dcc.Graph(
-                        id="moxy-chart"
+                        id="moxy-chart",
+                        figure={
+                            'layout':
+                                pio.templates["plotly_dark_custom"].layout
+                        }
                     ),
                     className="card"
                 )
@@ -56,7 +66,11 @@ layout = html.Div(
                 html.H1("Visualisation de la sélection"),
                 html.Div(
                     children=dcc.Graph(
-                        id="zoom-chart"
+                        id="zoom-chart",
+                        figure={
+                            'layout':
+                                pio.templates["plotly_dark_custom"].layout
+                        }
                     ),
                     className="card"
                 )

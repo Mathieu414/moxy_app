@@ -34,17 +34,17 @@ layout = html.Div(
         ),
 
         # menu
-        html.Article(
-            children=[
-                html.P('Charger les fichiers DataAverage.xlsx et Details.txt'),
-                dcc.Upload(
-                    id='upload',
-                    children=html.Button(
-                        'Upload'),
-                    # Allow multiple files to be uploaded
-                    multiple=True
-                ),
-            ],
+        html.Article(children=[
+            html.P(
+                'Charger les fichiers DataAverage.xlsx et Details.txt'),
+            dcc.Upload(
+                id='upload',
+                children=html.Button(
+                    'Upload'),
+                # Allow multiple files to be uploaded
+                multiple=True
+            ),
+        ],
             className="menu",
         ),
 
@@ -52,9 +52,14 @@ layout = html.Div(
         html.Article(
             children=[
                 html.H2("Courbe des groupes musculaires"),
+                html.Div(id="inputs-threshold", className='grid'),
                 html.Div(
                     children=dcc.Graph(
-                        id="test-chart"
+                        id="test-chart",
+                        figure={
+                            'layout':
+                            pio.templates["plotly_dark_custom"].layout
+                        }
                     ),
                     className="card"
                 )
@@ -64,6 +69,7 @@ layout = html.Div(
         ),
         # dcc.Store stores the file data
         dcc.Store(id='data_upload', storage_type='session'),
+        html.Div(id="div-hr"),
     ])
 
 
@@ -96,26 +102,35 @@ def update(contents, filenames):
 
 @callback(
     Output('test-chart', 'figure'),
-    Input('data_upload', 'data')
+    [Input('data_upload', 'data'),
+     Input('seuil1', 'value'),
+     Input('seuil2', 'value')]
 )
-def update_graph(data):
+def update_graph(data, seuil1, seuil2):
     data[0] = pd.read_json(data[0])
-
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     for n in data[1]:
         fig.add_trace(go.Scatter(
             x=data[0]["Time[s]"], y=data[0][n], name=n), secondary_y=False)
 
-    fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["HR[bpm]"],
-                             name="HR"), secondary_y=True)
+    if "HR[bpm]" in data[0].columns:
+        fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["HR[bpm]"],
+                                 name="HR"), secondary_y=True)
 
     fig.update_traces(mode='lines+markers',
                       hovertemplate="%{y:.2f}%<extra></extra>", marker_size=1)
     fig.update_xaxes(showgrid=False, title="Temps")
 
     fig.update_yaxes(title_text="Desoxygenation", secondary_y=False)
-    fig.update_yaxes(title_text="Heart Rate", secondary_y=True)
+    if "HR[bpm]" in data[0].columns:
+        fig.update_yaxes(title_text="Heart Rate", secondary_y=True)
+        if seuil1:
+            fig.add_hline(y=seuil1, line_width=3, line_dash="dash",
+                          line_color="green", secondary_y=True)
+        if seuil2:
+            fig.add_hline(y=seuil2, line_width=3, line_dash="dash",
+                          line_color="yellow", secondary_y=True)
 
     fig.update_layout(
         clickmode='event+select',
@@ -126,7 +141,6 @@ def update_graph(data):
 
 def parse_data(content, filename):
     content_type, content_string = content.split(",")
-
     decoded = base64.b64decode(content_string)
     try:
         if "xlsx" in filename:
@@ -141,3 +155,51 @@ def parse_data(content, filename):
     except Exception as e:
         print(e)
         return html.Div(["There was an error processing this file."])
+
+
+@callback(
+    Output('div-hr', 'children'),
+    Input('data_upload', 'data')
+)
+def add_graph(data):
+    data[0] = pd.read_json(data[0])
+    if "HR[bpm]" in data[0].columns:
+        children = []
+        for n in data[1]:
+            fig = px.scatter(x=data[0]["HR[bpm]"],
+                             y=data[0][n], marginal_y="violin",
+                             labels=dict(x="HR", y="Desoxygenation " + n))
+
+            children.extend([html.H2("Desoxygénation " + n + " en fonction du HR"),
+                             html.Div(
+                children=dcc.Graph(
+                            id="hr-" + n,
+                            figure=fig
+                            ),
+                className="card"
+            )]
+
+            )
+        content = html.Article(children=children,
+                               className="wrapper"
+                               )
+        return content
+
+
+@callback(
+    Output('inputs-threshold', 'children'),
+    Input('data_upload', 'data')
+)
+def add_thresholds(data):
+    data[0] = pd.read_json(data[0])
+    if "HR[bpm]" in data[0].columns:
+        children = [
+            html.Div([
+                html.P("Seuil 1"),
+                dcc.Input(id="seuil1", type='number')
+            ]),
+            html.Div([
+                html.P("Seuil 2"),
+                dcc.Input(id="seuil2", type='number')
+            ])]
+        return children
