@@ -9,6 +9,7 @@ import re
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.io as pio
+from scipy import signal
 
 dash.register_page(__name__)
 
@@ -44,6 +45,8 @@ layout = html.Div(
                 # Allow multiple files to be uploaded
                 multiple=True
             ),
+            html.A("Effacer les données ", role="button",
+                   className="contrast outline", id="clear-button")
         ],
             className="menu",
         ),
@@ -153,7 +156,7 @@ def create_figure(data):
             x=data[0]["Time[s]"], y=data[0][n], name=n,  hovertemplate="%{y:.2f} %<extra></extra>"), secondary_y=False)
 
     if "HR[bpm]" in data[0].columns:
-        fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["HR[bpm]"],
+        fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=signal.savgol_filter(data[0]["HR[bpm]"], 100, 4),
                                  name="HR", hovertemplate="%{y:.2f} bpm<extra></extra>"), secondary_y=True)
 
     fig.update_traces(mode='lines+markers', marker_size=1)
