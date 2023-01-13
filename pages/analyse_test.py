@@ -2,6 +2,7 @@ import base64
 import io
 import dash
 from dash import Dash, html, dcc, Input, Output, State, callback, ctx
+from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -40,7 +41,7 @@ layout = html.Div(
             html.P(
                 'Charger les fichiers DataAverage.xlsx et Details.txt'),
             dcc.Upload(
-                id='upload',
+                id='test-upload',
                 children=html.Button(
                     'Upload'),
                 # Allow multiple files to be uploaded
@@ -99,16 +100,19 @@ layout = html.Div(
 
 @callback(
     Output('data-upload', 'data'),
-    [Input("upload", "contents"),
-     Input("upload", "filename"),
-     Input('seuil1', 'value'),
-     Input('seuil2', 'value')],
-    [State('data-upload', 'data'),
-     State('test-choice', 'value')],
+    [Input("test-upload", "contents"),
+     Input("test-upload", "filename"),
+     Input("seuil1", 'value'),
+     Input("seuil2", 'value'),
+     Input("clear-button", "n_clicks")],
+    [State("data-upload", 'data'),
+     State("test-choice", 'value')],
     prevent_initial_call=True,
 )
-def data_upload(contents, filenames, seuil1, seuil2, stored_data, value):
-    if (ctx.triggered_id == "upload") and ('Details.txt' in filenames):
+def data_upload(contents, filenames, seuil1, seuil2, n_clicks, stored_data, value):
+    if debug:
+        print("--data-upload--")
+    if (ctx.triggered_id == "test-upload") and ('Details.txt' in filenames):
         t_id = filenames.index('Details.txt')
         x_id = filenames.index('DataAverage.xlsx')
         data = []
@@ -136,9 +140,9 @@ def data_upload(contents, filenames, seuil1, seuil2, stored_data, value):
         print(seuil1)
         print("valeur de seuil2")
         print(seuil2)
-    if (ctx.triggered_id in ("seuil1", "seuil2")) and (not all(s is None for s in (seuil1, seuil2))):
+    if (ctx.triggered_id in ["seuil1", "seuil2"]) and (not all(s is None for s in (seuil1, seuil2))):
         if debug:
-            print("Seuil 1 or Seuil 2 trigered are not None")
+            print("Seuil 1 or Seuil 2 are trigered and are not None")
         df = pd.read_json(stored_data[value][0])
         if seuil1 is not None:
             df["Seuil 1"] = seuil1
@@ -147,67 +151,126 @@ def data_upload(contents, filenames, seuil1, seuil2, stored_data, value):
         df = df.to_json()
         stored_data[value][0] = df
         return stored_data
-
-
-@ callback(
-    Output('data-upload', 'clear_data'),
-    Input("clear-button", "n_clicks"),
-    prevent_initial_call=True
-)
-def clear_data(clicks):
-    print("clear triggered")
-    return True
+    if (ctx.triggered_id == "clear-button") and (n_clicks > 0):
+        if debug:
+            print("Clearing data")
+        stored_data = None
+        return stored_data
+    else:
+        if debug:
+            print("prevent update data_upload")
+        raise PreventUpdate
 
 
 @ callback(
     Output('test-choice', 'options'),
-    Output('test-choice', 'value'),
-    Input('data-upload', 'data')
+    Input('data-upload', 'data'),
+    State('test-choice', 'options')
 )
-def dropdown_update(data):
+def dropdown_update(data, options):
+    if debug:
+        print("--dropdown_update--")
+        print("Test du type de 'data' : ")
+        print(type(data))
+        print("Test du type de 'options' : ")
+        print(type(options))
     if data:
         if debug:
             print("longueur de la liste 'data' : " + str(len(data)))
         options = [{"label": "Test n°" + str(session+1), "value": session}
                    for session in range(len(data))]
-        return [options, 0]
+        return options
+    if (data is None) and (options is not None):
+        if debug:
+            print("Data is None but options is not None")
+        return {}
     else:
-        return [dash.no_update, dash.no_update]
+        raise PreventUpdate
+
+
+"""
+@callback(
+    Output('test-choice', 'value'),
+    Input('test-choice', 'options')
+)
+def update_value_dropdown(options):
+    if debug:
+        print("--update_value_dropdown--")
+    if options is None:
+        print("option value is None")
+        return None
+    else:
+        if debug:
+            print("prevent update dropdown value")
+        raise PreventUpdate
+"""
 
 
 @ callback(
     [Output('seuil1', 'disabled'),
-     Output('seuil2', 'disabled')],
-    [Input('test-choice', 'value'),
-     Input('data-upload', 'data')],
+     Output('seuil2', 'disabled'),
+     Output('seuil1', 'value'),
+     Output('seuil2', 'value')],
+    Input('test-choice', 'value'),
+    State('data-upload', 'data'),
     prevent_initial_call=True
 )
-def enable_thresholds(value, data):
+def check_thresholds(value, data):
     if debug:
-        print("dataset columns: ")
-        print(pd.read_json(data[value][0]).columns)
-        print(value == False)
-    if data and value is not None:
+        print("--check_thresholds--")
+    if (data is not None) and (value is not None):
+        if debug:
+            print("dataset columns: ")
+            print(pd.read_json(data[value][0]).columns)
+            print("Test de 'value' :")
+            print(value == False)
         data = data[value]
         data[0] = pd.read_json(data[0])
         if "HR[bpm]" in data[0].columns:
             if debug:
                 print("threshold enabled")
-            return [False, False]
+            value_seuil1 = None
+            value_seuil2 = None
+            if ("Seuil 1" in data[0].columns):
+                value_seuil1 = data[0]["Seuil 1"][0]
+                print(value_seuil1)
+            if ("Seuil 2" in data[0].columns):
+                value_seuil2 = data[0]["Seuil 2"][0]
+                print(value_seuil2)
+            return [False, False, value_seuil1, value_seuil2]
+        else:
+            if debug:
+                print("HR is not in data")
+            return [True, True, None, None]
+    else:
+        if debug:
+            print("data or value is None")
+        return [True, True, None, None]
 
 
 @ callback(
     Output('test-chart', 'figure'),
-    [Input('test-choice', 'value')],
+    Input('test-choice', 'value'),
     State('data-upload', 'data'),
     prevent_initial_call=True
 )
 def update_graph(value, data):
-    if value is not None:
+    if debug:
+        print("--update_graph--")
+        print(value)
+        print((data is None))
+    if (value is not None) and (data is not None):
+        print("value is not None")
         data = data[value]
         data[0] = pd.read_json(data[0])
         fig = create_figure(data)
+        print("create figure :")
         return fig
+    if (value == 0) and (data is None):
+        print("value is None")
+        return {'layout': pio.templates["plotly_dark_custom"].layout}
+    else:
+        raise PreventUpdate
 
 
 def parse_data(content, filename):
@@ -258,6 +321,7 @@ def create_figure(data):
     return fig
 
 
+"""
 @ callback(
     Output("data-selection", "data"),
     Input("test-chart", "selectedData"),
@@ -283,6 +347,8 @@ def store_filtered_data(selectedData, data, value):
 )
 def display_filtered_data(data):
     if data:
+        if debug:
+            print("create figure")
         data[0] = pd.read_json(data[0])
         fig = create_figure(data)
         content = html.Article(children=[
@@ -322,3 +388,4 @@ def add_graph(data):
                                    className="wrapper"
                                    )
             return content
+"""

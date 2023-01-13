@@ -2,6 +2,7 @@ import base64
 import io
 import dash
 from dash import html, dcc, Input, Output, State, callback
+from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
 import datetime
@@ -36,7 +37,7 @@ layout = html.Div(
         html.Article(
             children=[
                 dcc.Upload(
-                    id='upload-data',
+                    id="training-upload",
                     children=html.A(
                         'Upload File', role='button'),),
                 html.P(children="Session", className='menu-title'),
@@ -90,7 +91,7 @@ layout = html.Div(
 
 @ callback(
     Output('file-data', 'data'),
-    Input('upload-data', 'contents'),
+    Input('training-upload', 'contents'),
     prevent_initial_call=True
 )
 def update_data(uploadData):
@@ -116,10 +117,13 @@ def update_data(uploadData):
     Output('session-filter', 'value'),
     Input('file-data', 'data'))
 def update_dropdown(data):
-    data = pd.read_json(data)
-    options = [{"label": session, "value": session}
-               for session in np.sort(data["Session Ct"].unique())]
-    return options, data["Session Ct"][0]
+    if data:
+        data = pd.read_json(data)
+        options = [{"label": session, "value": session}
+                   for session in np.sort(data["Session Ct"].unique())]
+        return options, data["Session Ct"][0]
+    else:
+        raise PreventUpdate
 
 
 @callback(
