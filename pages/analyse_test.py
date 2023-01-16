@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.io as pio
 from scipy import signal
+import statsmodels.api as sm
 
 dash.register_page(__name__)
 
@@ -188,24 +189,6 @@ def dropdown_update(data, options):
         raise PreventUpdate
 
 
-"""
-@callback(
-    Output('test-choice', 'value'),
-    Input('test-choice', 'options')
-)
-def update_value_dropdown(options):
-    if debug:
-        print("--update_value_dropdown--")
-    if options is None:
-        print("option value is None")
-        return None
-    else:
-        if debug:
-            print("prevent update dropdown value")
-        raise PreventUpdate
-"""
-
-
 @ callback(
     [Output('seuil1', 'disabled'),
      Output('seuil2', 'disabled'),
@@ -321,7 +304,6 @@ def create_figure(data):
     return fig
 
 
-"""
 @ callback(
     Output("data-selection", "data"),
     Input("test-chart", "selectedData"),
@@ -361,8 +343,7 @@ def display_filtered_data(data):
 
 @ callback(
     Output('div-hr', 'children'),
-    Input('data-selection', 'data'),
-    prevent_initial_call=True
+    Input('data-selection', 'data')
 )
 def add_graph(data):
     if data:
@@ -370,10 +351,28 @@ def add_graph(data):
         if "HR[bpm]" in data[0].columns:
             children = [html.H2("Desoxygénation musculaire en fonction du HR")]
             for n in data[1]:
-                fig = px.scatter(x=data[0]["HR[bpm]"],
-                                 y=data[0][n], marginal_y="violin",
-                                 labels=dict(x="HR", y="Desoxygenation " + n))
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=data[0]["HR[bpm]"],
+                                         y=data[0][n],
+                                         mode='markers',
+                                         showlegend=False))
 
+                fig.add_trace(go.Histogram2dContour(x=data[0]["HR[bpm]"],
+                                                    y=data[0][n],
+                                                    colorscale=[
+                                                        [0, '#141e26'], [1, '#636efa ']],
+                                                    showscale=False,
+                                                    contours_showlines=False))
+                trendline = sm.nonparametric.lowess(data[0][n],
+                                                    data[0]["HR[bpm]"],
+                                                    frac=0.5,
+                                                    missing="drop")
+                fig.add_trace(go.Scatter(x=trendline[:, 0],
+                                         y=trendline[:, 1],
+                                         mode='lines',
+                                         line_color='#ab63fa',
+                                         name="Tendance",
+                                         line_shape='spline'))
                 children.extend([html.H4(n),
                                 html.Div(
                     children=dcc.Graph(
@@ -388,4 +387,5 @@ def add_graph(data):
                                    className="wrapper"
                                    )
             return content
-"""
+    else:
+        raise PreventUpdate
