@@ -37,5 +37,4 @@ def nav():
 app.layout = html.Main([nav(), dash.page_container], className="container")
 
 
-if __name__ == "__main__":
-    app.run_server(port=8888, debug=True)
+server = app.server
