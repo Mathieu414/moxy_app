@@ -1,45 +1,23 @@
 # Moxy app
 
-Application pour faciliter l'analyse des données moxy.
+App to help analyzing [moxy](https://www.moxymonitor.com/) data from VO2 tests and training sessions.
 
-## Installation
+Using a venv or docker to develop locally, and a docker image for production
 
-First clone this github repository, then `cd` into the repository.
+inspired by [this tuto](https://towardsdatascience.com/deploy-containerized-plotly-dash-app-to-heroku-with-ci-cd-f82ca833375c)
 
-Then run in the terminal :
+## Run locally with docker image
 
-```
-python -m venv venv
-```
-
-**On Ubuntu/Mac (other than M1) :**
+To run the image locally, cd into the moxy-app folder and:
 
 ```
-source venv/bin/activate
+docker build -t moxy-app project/.
 ```
 
-**Windows :**
+And run the container
 
 ```
-.\venv\Scripts\activate
+docker run -p 8050:8050 docker-dash
 ```
 
-or if using Git Bash :
-
-```
-. venv/Scripts/activate
-```
-
-Then run
-
-```
-pip install --upgrade pip
-
-python -m pip install -r requirements.txt
-```
-
-and finally :
-
-```
-python app.py
-```
+You can find to the app on your local machine http://localhost:8050/ (or localhost:8050). This way the image is created using the Dockerfile, instead of the Dockerfile.prod.
