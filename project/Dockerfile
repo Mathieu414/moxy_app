@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.9-slim-buster
 
 LABEL maintainer "Mathieu Perrin, mathieu.perrin.co@outlook.fr"
 
