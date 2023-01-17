@@ -174,3 +174,5 @@ def display(selectedData, data):
 
         fig2.update_layout(clickmode='event+select')
         return fig2
+    else:
+        raise PreventUpdate
