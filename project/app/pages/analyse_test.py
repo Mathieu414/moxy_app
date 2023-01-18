@@ -63,7 +63,7 @@ layout = html.Div(
                     html.Div(dcc.Dropdown(
                         id="test-choice"), className="col")
                 ], className="row"),
-                html.P("Selectionnez la zone du test"),
+                html.P(html.B("Selectionnez la zone du test")),
                 html.Div(id="inputs-threshold",
                          children=[
                              html.Div([
@@ -171,16 +171,18 @@ def data_upload(contents, filenames, seuil1, seuil2, n_clicks, stored_data, valu
 def dropdown_update(data, options):
     if debug:
         print("--dropdown_update--")
-        print("Test du type de 'data' : ")
-        print(type(data))
-        print("Test du type de 'options' : ")
-        print(type(options))
     if data:
         if debug:
             print("longueur de la liste 'data' : " + str(len(data)))
-        options = [{"label": "Test n°" + str(session+1), "value": session}
-                   for session in range(len(data))]
-        return options
+        new_options = [{"label": "Test n°" + str(session+1), "value": session}
+                       for session in range(len(data))]
+        if (options is not None):
+            if len(options) != len(new_options):
+                return new_options
+        if options is None:
+            return new_options
+        else:
+            raise PreventUpdate
     if (data is None) and (options is not None):
         if debug:
             print("Data is None but options is not None")
@@ -306,39 +308,50 @@ def create_figure(data):
 
 @ callback(
     Output("data-selection", "data"),
-    Input("test-chart", "selectedData"),
-    [State('data-upload', 'data'),
-     State('test-choice', 'value')],
+    [Input("test-chart", "selectedData"),
+     Input('test-choice', 'value')],
+    State('data-upload', 'data'),
     prevent_initial_call=True)
-def store_filtered_data(selectedData, data, value):
-    data = data[value]
-    data[0] = pd.read_json(data[0])
-    selected_time = []
-    if selectedData and selectedData['points']:
-        for point in selectedData["points"]:
-            selected_time.append(point['x'])
-        data[0] = data[0].query("`Time[s]` == @selected_time")
-        data[0] = data[0].to_json()
-        return data
+def store_filtered_data(selectedData, value, data):
+    if debug:
+        print("--store_filtered_data--")
+    if ctx.triggered_id == "test-chart":
+        if debug:
+            print("Creating data selection chart")
+        data = data[value]
+        data[0] = pd.read_json(data[0])
+        selected_time = []
+        if selectedData and selectedData['points']:
+            for point in selectedData["points"]:
+                selected_time.append(point['x'])
+            data[0] = data[0].query("`Time[s]` == @selected_time")
+            data[0] = data[0].to_json()
+            return data
+    if ctx.triggered_id == "test-choice":
+        if debug:
+            print("erasing data-selection")
+        return {}
+    else:
+        raise PreventUpdate
 
 
 @ callback(
     Output('zoom-chart-div', 'children'),
     Input('data-selection', 'data'),
-
 )
 def display_filtered_data(data):
+    fig = {'layout': pio.templates["plotly_dark_custom"].layout}
     if data:
         if debug:
             print("create figure")
         data[0] = pd.read_json(data[0])
         fig = create_figure(data)
-        content = html.Article(children=[
-            html.H2("Courbe de la sélection"),
-            dcc.Graph(figure=fig)],
-            className="wrapper"
-        )
-        return content
+    content = html.Article(children=[
+        html.H2("Courbe de la sélection"),
+        dcc.Graph(figure=fig)],
+        className="wrapper"
+    )
+    return content
 
 
 @ callback(
@@ -388,4 +401,4 @@ def add_graph(data):
                                    )
             return content
     else:
-        raise PreventUpdate
+        return {}
