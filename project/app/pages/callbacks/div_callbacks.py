@@ -8,7 +8,7 @@ import statsmodels.api as sm
 def get_div_callbacks(debug=True):
     @callback(
         Output('div-hr', 'children'),
-        Input('data-selection', 'data')
+        Input('data-filtered', 'data')
     )
     def add_graph(data):
         if data:

@@ -34,26 +34,21 @@ def get_figure_callbacks(debug=True):
         Output('test-zoom-chart', 'figure'),
         Input('data-selection', 'data'),
     )
-    def display_filtered_data(data):
+    def display_zoomed_data(data):
         fig = {'layout': pio.templates["plotly_dark_custom"].layout}
         if data:
             if debug:
                 print("create figure")
             data[0] = pd.read_json(data[0])
-            fig = fc.create_figure(data)
+            fig = fc.create_figure(data, False)
         return fig
 
-    @callback(
-        Output("test-filter-chart", "figure"),
-        Input("filter-selection-button", "n_clicks"),
-        State("data-selection", "data"),
+    @ callback(
+        Output('test-filter-chart', 'figure'),
+        Input('data-filtered', 'data'),
         prevent_initial_call=True
     )
-    def filter_selection(n_clicks, data):
-        if debug:
-            print("--filter_selection--")
-        if data:
-            data[0] = pd.read_json(data[0])
-            data[0] = fc.cut_df(data[0])
-            fig = fc.create_figure(data, slope=False)
-            return fig
+    def display_filtered_data(data):
+        data[0] = pd.read_json(data[0])
+        fig = fc.create_figure(data)
+        return fig

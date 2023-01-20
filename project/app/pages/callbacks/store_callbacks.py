@@ -110,3 +110,19 @@ def get_store_callbacks(debug=True):
             # return {}
         else:
             raise PreventUpdate
+
+    @callback(
+        Output("data-filtered", "data"),
+        Input("filter-selection-button", "n_clicks"),
+        State("data-selection", "data"),
+        prevent_initial_call=True
+    )
+    def filter_selection(n_clicks, data):
+        if debug:
+            print("--filter_selection--")
+        if data:
+            data[0] = pd.read_json(data[0])
+            data[0] = fc.cut_pauses(data[0])
+            data[0] = fc.cut_begining_end(data[0])
+            data[0] = data[0].to_json()
+            return data

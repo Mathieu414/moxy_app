@@ -107,6 +107,7 @@ layout = html.Div(
         # dcc.Store stores the file data
         dcc.Store(id='data-upload', storage_type='session'),
         dcc.Store(id='data-selection', storage_type='session'),
+        dcc.Store(id='data-filtered')
     ])
 
 get_store_callbacks(d)

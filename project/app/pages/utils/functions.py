@@ -22,24 +22,31 @@ def df_slope(df):
     return result
 
 
-def cut_df(df, threshold=-1.0):
+def cut_pauses(df, threshold=-1.0):
     cond = (df['Slope'] < threshold) & (df['Slope'].shift(1) >= threshold)
     slope_index = [x - 5 for x in df[cond].index.tolist()]
-    print(slope_index[0])
     if slope_index[0] >= df.iloc[0].name:
-        print(df.loc[slope_index])
         hr_threshold = df.loc[slope_index]['HR[bpm]']
-        print(hr_threshold)
         for (value, index) in zip(hr_threshold, hr_threshold.index):
-            print((value, index))
             condition_find_next_hr = (df['HR[bpm]'] > value) & (
                 df['HR[bpm]'].shift(1) <= value) & (df.index > index)
             next_hr = df[condition_find_next_hr].iloc[0]
-            print(index)
-            print(int(next_hr.name))
-            print(df.loc[index: int(next_hr.name)].index)
             df.loc[index: int(next_hr.name)] = np.nan
         return df
+
+
+def cut_begining_end(df, threshold_begining=1.0, threshold_end=-0.4):
+    cond = (df['Slope'] < threshold_begining) & (
+        df['Slope'].shift(1) >= threshold_begining)
+    slope_index = [x for x in df[cond].index.tolist()]
+    print(df.loc[: slope_index[0]].index)
+    df = df.drop(df.loc[: slope_index[0]].index.tolist())
+    cond = (df['Slope'] < threshold_end) & (
+        df['Slope'].shift(1) >= threshold_end)
+    slope_index = [x for x in df[cond].index.tolist()]
+    print(slope_index)
+    df = df.drop(df.loc[slope_index[-1]:].index.tolist())
+    return df
 
 
 def parse_data(content, filename):
