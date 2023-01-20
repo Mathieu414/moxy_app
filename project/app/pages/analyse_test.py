@@ -105,6 +105,7 @@ layout = html.Div(
         html.Div(id="div-hr"),
         # dcc.Store stores the file data
         dcc.Store(id='data-upload', storage_type='session'),
+        dcc.Store(id='seuils', storage_type='session'),
         dcc.Store(id='data-selection', storage_type='session'),
         dcc.Store(id='data-filtered')
     ])
