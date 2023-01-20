@@ -44,8 +44,9 @@ layout = html.Div(
                 multiple=True
             ),
             html.Button("Effacer les données ",
-                        className="contrast outline", id="clear-button", n_clicks=0)
-        ],
+                        className="contrast outline", id="clear-button", n_clicks=0),
+            dcc.Dropdown(
+                id="test-choice")],
             className="menu",
         ),
 
@@ -55,8 +56,6 @@ layout = html.Div(
                 html.Div(children=[
                     html.Div(html.H2("Courbe des groupes musculaires"),
                              className="col-8"),
-                    html.Div(dcc.Dropdown(
-                        id="test-choice"), className="col")
                 ], className="row"),
                 html.P(html.B("Selectionnez la zone du test")),
                 html.Div(id="inputs-threshold",
