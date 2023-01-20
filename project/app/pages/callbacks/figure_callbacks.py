@@ -21,7 +21,7 @@ def get_figure_callbacks(debug=True):
             print("value is not None")
             data = data[value]
             data[0] = pd.read_json(data[0])
-            fig = fc.create_figure(data)
+            fig = fc.create_figure([data[0], data[1]])
             print("create figure :")
             return fig
         if (value == 0) and (data is None):
@@ -32,23 +32,30 @@ def get_figure_callbacks(debug=True):
 
     @ callback(
         Output('test-zoom-chart', 'figure'),
-        Input('data-selection', 'data'),
+        Input('test-choice', 'value'),
+        Input('data-upload', 'data')
     )
-    def display_zoomed_data(data):
+    def display_zoomed_data(value, data):
         fig = {'layout': pio.templates["plotly_dark_custom"].layout}
-        if data:
-            if debug:
-                print("create figure")
-            data[0] = pd.read_json(data[0])
-            fig = fc.create_figure(data, False)
+        if (value is not None) and (data is not None):
+            if len(data[value]) >= 3:
+                if debug:
+                    print("create zoomed figure")
+                data[value][2] = pd.read_json(data[value][2])
+                fig = fc.create_figure([data[value][2], data[value][1]], False)
         return fig
 
     @ callback(
         Output('test-filter-chart', 'figure'),
-        Input('data-filtered', 'data'),
-        prevent_initial_call=True
+        Input('test-choice', 'value'),
+        Input('data-upload', 'data')
     )
-    def display_filtered_data(data):
-        data[0] = pd.read_json(data[0])
-        fig = fc.create_figure(data)
+    def display_filtered_data(value, data):
+        fig = {'layout': pio.templates["plotly_dark_custom"].layout}
+        if (value is not None) and (data is not None):
+            if len(data[value]) >= 4:
+                if debug:
+                    print("create filtered figure")
+                data[value][3] = pd.read_json(data[value][3])
+                fig = fc.create_figure([data[value][3], data[value][1]], False)
         return fig

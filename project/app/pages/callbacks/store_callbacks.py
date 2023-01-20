@@ -13,12 +13,14 @@ def get_store_callbacks(debug=True):
          Input("test-upload", "filename"),
          Input("seuil1", 'value'),
          Input("seuil2", 'value'),
-         Input("clear-button", "n_clicks")],
-        [State("data-upload", 'data'),
-         State("test-choice", 'value')],
+         Input("clear-button", "n_clicks"),
+         Input("test-choice", 'value'),
+         Input("test-chart", "selectedData"),
+         Input("filter-selection-button", "n_clicks")],
+        [State("data-upload", 'data')],
         prevent_initial_call=True,
     )
-    def data_upload(contents, filenames, seuil1, seuil2, n_clicks, stored_data, value):
+    def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, stored_data):
         if debug:
             print("--data-upload--")
         if (ctx.triggered_id == "test-upload") and ('Details.txt' in filenames):
@@ -62,67 +64,71 @@ def get_store_callbacks(debug=True):
             if debug:
                 print("Seuil 1 or Seuil 2 are trigered and are not None")
             df = pd.read_json(stored_data[value][0])
+            df_selected = None
+            df_filtered = None
+            if len(stored_data[value]) >= 3:
+                df_selected = pd.read_json(stored_data[value][2])
+            if len(stored_data[value]) >= 4:
+                df_filtered = pd.read_json(stored_data[value][3])
             if seuil1 is not None:
                 df["Seuil 1"] = seuil1
+                if df_selected:
+                    df_selected["Seuil 1"] = seuil1
+                if df_filtered:
+                    df_filtered["Seuil 1"] = seuil1
             if seuil2 is not None:
                 df["Seuil 2"] = seuil2
+                if df_selected:
+                    df_selected["Seuil 2"] = seuil2
+                if df_filtered:
+                    df_filtered["Seuil 2"] = seuil2
             df = df.to_json()
             stored_data[value][0] = df
+            if df_selected:
+                df_selected = df_selected.to_json()
+                stored_data[value][2] = df_selected
+            if df_filtered:
+                df_filtered = df_filtered.to_json()
+                stored_data[value][3] = df_filtered
             return stored_data
-        if (ctx.triggered_id == "clear-button") and (n_clicks > 0):
+        if (ctx.triggered_id == "clear-button") and (clear_button > 0):
             if debug:
                 print("Clearing data")
             stored_data = None
             return stored_data
+        if ctx.triggered_id == "test-chart":
+            if debug:
+                print("Storing data selection")
+            if selectedData and selectedData['points']:
+                data_selected = pd.read_json(stored_data[value][0])
+                selected_time = []
+                for point in selectedData["points"]:
+                    selected_time.append(point['x'])
+                data_selected = data_selected.query(
+                    "`Time[s]` == @selected_time")
+                df = pd.DataFrame()
+                df["Slope"] = fc.df_slope(data_selected["HR[bpm]"])
+                data_selected = data_selected.join(df)
+                print(data_selected)
+                if len(stored_data[value]) >= 3:
+                    stored_data[value][2] = data_selected.to_json()
+                else:
+                    stored_data[value].append(data_selected.to_json())
+                return stored_data
+        if (ctx.triggered_id == "filter-selection-button"):
+            if debug:
+                print("--filter_selection--")
+            if len(stored_data[value]) >= 3:
+                data_selected = pd.read_json(stored_data[value][2])
+                data_selected = fc.cut_pauses(data_selected)
+                data_selected = fc.cut_begining_end(data_selected)
+
+                if len(stored_data[value]) >= 4:
+                    stored_data[value][3] = data_selected.to_json()
+                else:
+                    stored_data[value].append(data_selected.to_json())
+                return stored_data
         else:
             if debug:
                 print("prevent update data_upload")
             raise PreventUpdate
-
-    @ callback(
-        Output("data-selection", "data"),
-        [Input("test-chart", "selectedData"),
-         Input('test-choice', 'value')],
-        State('data-upload', 'data'),
-        prevent_initial_call=True)
-    def store_filtered_data(selectedData, value, data):
-        if debug:
-            print("--store_filtered_data--")
-        if ctx.triggered_id == "test-chart":
-            if debug:
-                print("Creating data selection chart")
-            data = data[value]
-            data[0] = pd.read_json(data[0])
-            selected_time = []
-            if selectedData and selectedData['points']:
-                for point in selectedData["points"]:
-                    selected_time.append(point['x'])
-                data[0] = data[0].query("`Time[s]` == @selected_time")
-                df = pd.DataFrame()
-                df["Slope"] = fc.df_slope(data[0]["HR[bpm]"])
-                data[0] = data[0].join(df)
-                print(data[0])
-                data[0] = data[0].to_json()
-                return data
-        # if ctx.triggered_id == "test-choice":
-            # if debug:
-                # print("erasing data-selection")
-            # return {}
-        else:
-            raise PreventUpdate
-
-    @callback(
-        Output("data-filtered", "data"),
-        Input("filter-selection-button", "n_clicks"),
-        State("data-selection", "data"),
-        prevent_initial_call=True
-    )
-    def filter_selection(n_clicks, data):
-        if debug:
-            print("--filter_selection--")
-        if data:
-            data[0] = pd.read_json(data[0])
-            data[0] = fc.cut_pauses(data[0])
-            data[0] = fc.cut_begining_end(data[0])
-            data[0] = data[0].to_json()
-            return data
