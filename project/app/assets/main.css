@@ -1,3 +1,9 @@
+@media (min-width: 1500px) {
+.container {
+    max-width: 1450px;
+}
+}
+
 .center {
     text-align: center;
   }
