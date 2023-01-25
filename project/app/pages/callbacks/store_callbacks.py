@@ -9,7 +9,8 @@ import pages.utils.functions as fc
 def get_store_callbacks(debug=True):
     @callback(
         [Output('data-upload', 'data'),
-         Output('seuils', 'data')],
+         Output('seuils', 'data'),
+         Output("detection-threshold", "data")],
         [Input("test-upload", "contents"),
          Input("test-upload", "filename"),
          Input("seuil1", 'value'),
@@ -19,13 +20,16 @@ def get_store_callbacks(debug=True):
          Input("test-chart", "selectedData"),
          Input("filter-selection-button", "n_clicks")],
         [State("data-upload", 'data'),
-         State("seuils", "data")],
+         State("seuils", "data"),
+         State("detect-filter", "value"),
+         State("detection-threshold", "data")],
         prevent_initial_call=True,
     )
-    def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, stored_data, stored_seuils):
+    def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, stored_data, stored_seuils, detect_threshold, stored_detection_threshold):
         if debug:
             print("--data-upload--")
-        if (ctx.triggered_id == "test-upload") and ('Details.txt' in filenames):
+
+        if (ctx.triggered_id == "test-upload") and ('Details.txt' in filenames) and ('DataAverage.xlsx' in filenames):
             t_id = filenames.index('Details.txt')
             x_id = filenames.index('DataAverage.xlsx')
             data = []
@@ -47,8 +51,10 @@ def get_store_callbacks(debug=True):
             for n in data[1]:
                 data[0][n] = signal.savgol_filter(data[0][n], 40, 3)
 
+            # value for the thresholds by default
             new_seuils = [None, None]
 
+            # check if HR is present
             if "HR[bpm]" in data[0].columns:
                 data[0]["HR[bpm]"] = signal.savgol_filter(
                     data[0]["HR[bpm]"], 40, 4)
@@ -57,14 +63,18 @@ def get_store_callbacks(debug=True):
             data[0] = data[0].to_json()
             if stored_data:
                 stored_data.append([data[0], data[1]])
-                return [stored_data, stored_seuils.append(new_seuils)]
+                stored_seuils.append(new_seuils)
+                stored_detection_threshold.append(-1.0)
+                return [stored_data, stored_seuils, stored_detection_threshold]
             else:
-                return [[[data[0], data[1]]], [new_seuils]]
+                return [[[data[0], data[1]]], [new_seuils], [-1.0]]
+
         if debug:
             print("valeur de seuil1")
             print(seuil1)
             print("valeur de seuil2")
             print(seuil2)
+
         if (ctx.triggered_id in ["seuil1", "seuil2"]) and (not all(s is None for s in (seuil1, seuil2))):
             if debug:
                 print("Seuil 1 or Seuil 2 are trigered and are not None")
@@ -98,12 +108,14 @@ def get_store_callbacks(debug=True):
                 df_filtered = df_filtered.to_json()
                 stored_data[value][3] = df_filtered
             stored_seuils[value] = [seuil1, seuil2]
-            return [stored_data, stored_seuils]
+            return [stored_data, stored_seuils, no_update]
+
         if (ctx.triggered_id == "clear-button") and (clear_button > 0):
             if debug:
                 print("Clearing data")
             stored_data = None
-            return [stored_data, no_update]
+            return [stored_data, None, None]
+
         if ctx.triggered_id == "test-chart":
             if debug:
                 print("Storing data selection")
@@ -122,20 +134,46 @@ def get_store_callbacks(debug=True):
                     stored_data[value][2] = data_selected.to_json()
                 else:
                     stored_data[value].append(data_selected.to_json())
-                return [stored_data, no_update]
+                return [stored_data, no_update, no_update]
+
         if (ctx.triggered_id == "filter-selection-button"):
             if debug:
                 print("--filter_selection--")
-            if len(stored_data[value]) >= 3:
-                data_selected = pd.read_json(stored_data[value][2])
-                data_selected = fc.cut_pauses(data_selected)
-                data_selected = fc.cut_begining_end(data_selected)
+            if value is not None:
+                if len(stored_data[value]) >= 3:
+                    if debug:
+                        print("data selection is not empty")
+                    data_selected = pd.read_json(stored_data[value][2])
+                    list_data_filtered = fc.cut_pauses(
+                        data_selected, float(detect_threshold))[0]
+                    """
+                    data_selected = fc.cut_begining_end(data_selected)
 
-                if len(stored_data[value]) >= 4:
-                    stored_data[value][3] = data_selected.to_json()
+                    # smooth the data again
+                    for n in stored_data[value][1]:
+                        data_selected[n] = signal.savgol_filter(
+                            data_selected[n], 40, 2)
+
+                    # check if HR is present
+                    if "HR[bpm]" in data_selected.columns:
+                        data_selected["HR[bpm]"] = signal.savgol_filter(
+                            data_selected["HR[bpm]"], 40, 2)
+                    """
+
+                    for n in range(len(list_data_filtered)):
+                        list_data_filtered[n] = list_data_filtered[n].to_json()
+
+                    if len(stored_data[value]) >= 4:
+                        stored_data[value][3] = list_data_filtered
+                    else:
+                        stored_data[value].append(list_data_filtered)
+
+                    stored_detection_threshold[value] = detect_threshold
+                    return [stored_data, no_update, stored_detection_threshold]
                 else:
-                    stored_data[value].append(data_selected.to_json())
-                return [stored_data, no_update]
+                    raise PreventUpdate
+            else:
+                raise PreventUpdate
         else:
             if debug:
                 print("prevent update data_upload")

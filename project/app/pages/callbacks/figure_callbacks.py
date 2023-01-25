@@ -43,7 +43,7 @@ def get_figure_callbacks(debug=True):
                 if debug:
                     print("create zoomed figure")
                 data[value][2] = pd.read_json(data[value][2])
-                fig = fc.create_figure([data[value][2], data[value][1]], False)
+                fig = fc.create_figure([data[value][2], data[value][1]], True)
         return fig
 
     @ callback(
@@ -57,6 +57,8 @@ def get_figure_callbacks(debug=True):
             if len(data[value]) >= 4:
                 if debug:
                     print("create filtered figure")
-                data[value][3] = pd.read_json(data[value][3])
-                fig = fc.create_figure([data[value][3], data[value][1]], False)
+                for n in range(len(data[value][3])):
+                    data[value][3][n] = pd.read_json(data[value][3][n])
+                fig = fc.create_filtered_figure(
+                    [data[value][3], data[value][1]], False)
         return fig

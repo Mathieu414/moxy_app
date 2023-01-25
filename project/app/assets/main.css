@@ -41,3 +41,11 @@
     margin-bottom: 0;
     font-weight: bold;
 }
+.small-text{
+    font-size: small;
+    margin-bottom: 5px;
+    text-align: right;
+}
+.error{
+    color: red;
+}

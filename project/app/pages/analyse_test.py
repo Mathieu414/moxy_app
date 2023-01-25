@@ -86,8 +86,13 @@ layout = html.Div(
             className="wrapper"
         ),
         html.Div(id="zoom-chart-div", children=html.Article(children=[
-            html.Div([html.H2("Courbe de la sélection", className="col-sm-9"),
-                      html.Button("Filtrer les données", className="contrast outline col-sm-3", id="filter-selection-button", n_clicks=0)], className="row"),
+            html.Div([html.H2("Courbe de la sélection")]),
+            html.Div([html.Button("Filtrer les données", className="contrast outline col-sm-3",
+                                  id="filter-selection-button", n_clicks=0),
+                      html.P("Seuil de detection des paliers",
+                             className="small-text col-sm-2"),
+                      html.Div(dcc.Input(id="detect-filter", type="number"), className="col-sm-2")], className="row"),
+            html.Div(id='div-error-filter'),
             dcc.Graph(id="test-zoom-chart",
                       figure={
                           'layout':
@@ -107,7 +112,8 @@ layout = html.Div(
         dcc.Store(id='data-upload', storage_type='session'),
         dcc.Store(id='seuils', storage_type='session'),
         dcc.Store(id='data-selection', storage_type='session'),
-        dcc.Store(id='data-filtered')
+        dcc.Store(id='data-filtered', storage_type='session'),
+        dcc.Store(id='detection-threshold', storage_type='session')
     ])
 
 get_store_callbacks(d)

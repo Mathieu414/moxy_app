@@ -1,8 +1,9 @@
-from dash import html, dcc, Input, Output, callback
+from dash import html, dcc, Input, Output, callback, State
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.graph_objects as go
 import statsmodels.api as sm
+import pages.utils.functions as fc
 
 
 def get_div_callbacks(debug=True):
@@ -60,4 +61,30 @@ def get_div_callbacks(debug=True):
             else:
                 return None
         else:
-            raise PreventUpdate
+            return None
+
+    @callback(
+        Output('div-error-filter', 'children'),
+        Input("filter-selection-button", "n_clicks"),
+        [State("data-upload", 'data'),
+         State("test-choice", 'value'),
+         State("detect-filter", "value")],
+        prevent_initial_call=True
+
+    )
+    def error_filter(n_clicks, stored_data, value, filter_value):
+        if value is not None:
+            if len(stored_data[value]) >= 3:
+                data_selected = pd.read_json(stored_data[value][2])
+                errors = None
+                if fc.cut_pauses(data_selected)[1] is not None:
+                    errors = [html.P(fc.cut_pauses(data_selected, filter_value)[
+                                     1], className="error")]
+                if errors is not None:
+                    return errors
+                else:
+                    raise PreventUpdate
+            else:
+                return html.P("Pas de données selectionnées", className="error")
+        else:
+            return html.P("Pas de test selectionné", className="error")
