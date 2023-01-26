@@ -44,8 +44,9 @@ layout = html.Div(
                 multiple=True
             ),
             html.Button("Effacer les données ",
-                        className="contrast outline", id="clear-button", n_clicks=0)
-        ],
+                        className="contrast outline", id="clear-button", n_clicks=0),
+            dcc.Dropdown(
+                id="test-choice")],
             className="menu",
         ),
 
@@ -55,8 +56,6 @@ layout = html.Div(
                 html.Div(children=[
                     html.Div(html.H2("Courbe des groupes musculaires"),
                              className="col-8"),
-                    html.Div(dcc.Dropdown(
-                        id="test-choice"), className="col")
                 ], className="row"),
                 html.P(html.B("Selectionnez la zone du test")),
                 html.Div(id="inputs-threshold",
@@ -87,13 +86,19 @@ layout = html.Div(
             className="wrapper"
         ),
         html.Div(id="zoom-chart-div", children=html.Article(children=[
-            html.Div([html.H2("Courbe de la sélection", className="col-sm-9"),
-                      html.Button("Filtrer les données", className="contrast outline col-sm-3", id="filter-selection-button", n_clicks=0)], className="row"),
+            html.Div([html.H2("Courbe de la sélection")]),
             dcc.Graph(id="test-zoom-chart",
                       figure={
                           'layout':
                           pio.templates["plotly_dark_custom"].layout
-                      })]
+                      }),
+            html.Hr(),
+            html.Div([html.Button("Filtrer les données", className="contrast outline col-sm-3",
+                                  id="filter-selection-button", n_clicks=0),
+                      html.P("Seuil de detection des paliers",
+                             className="small-text col-sm-2"),
+                      html.Div(dcc.Input(id="detect-filter", type="number"), className="col-sm-2")], className="row"),
+            html.Div(id='div-error-filter'),]
         )),
         html.Div(id="filter-data-div", children=html.Article(children=[
             html.H2("Courbe filtrée", className="col-sm-9"),
@@ -103,11 +108,15 @@ layout = html.Div(
                           pio.templates["plotly_dark_custom"].layout
                       })]
         )),
+        html.Div(id="div-table"),
         html.Div(id="div-hr"),
         # dcc.Store stores the file data
         dcc.Store(id='data-upload', storage_type='session'),
+        dcc.Store(id='seuils', storage_type='session'),
         dcc.Store(id='data-selection', storage_type='session'),
-        dcc.Store(id='data-filtered')
+        dcc.Store(id='data-filtered', storage_type='session'),
+        dcc.Store(id='detection-threshold', storage_type='session'),
+        dcc.Store(id='analytics', storage_type='session')
     ])
 
 get_store_callbacks(d)
