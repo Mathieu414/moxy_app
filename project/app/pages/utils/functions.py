@@ -38,13 +38,14 @@ def cut_pauses(df, threshold=-1.0):
     print("--cut_pauses--")
     cond = (df['Slope'] < threshold) & (df['Slope'].shift(1) >= threshold)
     slope_index = [x - 5 for x in df[cond].index.tolist()]
+    # check if there is any slope matching
     if len(slope_index) > 0:
 
         list_levels = []
 
         hr_threshold = df.loc[slope_index]['HR[bpm]']
         next_hr = []
-        # print(hr_threshold)
+
         for (value, index) in zip(hr_threshold, hr_threshold.index):
 
             condition_find_next_hr = (df['HR[bpm]'] > value) & (
@@ -52,35 +53,61 @@ def cut_pauses(df, threshold=-1.0):
             if not df[condition_find_next_hr].empty:
                 next_hr.append(df[condition_find_next_hr].iloc[0])
 
-            # put the levels detected in a list
-            if len(next_hr) == 1:
-                list_item = df.loc[:next_hr[0].name]
-                list_item.loc[index:next_hr[0].name] = np.nan
-                list_levels.append(list_item)
-            else:
-                list_item = df.loc[next_hr[-2].name:next_hr[-1].name]
-                list_item.loc[index:next_hr[-1].name] = np.nan
-                list_levels.append(list_item)
+                # put the levels detected in a list
+                if len(next_hr) == 1:
+                    list_item = df.loc[:next_hr[0].name]
+                    list_item.loc[index:next_hr[0].name] = np.nan
+                    list_levels.append(list_item)
+                else:
+                    list_item = df.loc[next_hr[-2].name:next_hr[-1].name]
+                    list_item.loc[index:next_hr[-1].name] = np.nan
+                    list_levels.append(list_item)
+        print(next_hr[-1].name)
+        print(hr_threshold.index.tolist()[-1])
+        if next_hr[-1].name > hr_threshold.index.tolist()[-1]:
+            list_item = df.loc[next_hr[-1].name:]
+            list_levels.append(list_item)
+        else:
+            list_item = df.loc[next_hr[-1].name:hr_threshold.index.tolist()[-1]]
+            list_item.loc[index:next_hr[-1].name] = np.nan
+            list_levels.append(list_item)
 
-        print(list_levels)
-        return (list_levels, None)
+        print(len(list_levels))
+        return (list_levels, str(len(list_levels)) + " paliers détectés")
     else:
         return ([df], "Erreur : pas de pauses détectées")
 
 
-def cut_begining_end(df, threshold_begining=1.0, threshold_end=-0.4):
-    cond = (df['Slope'] < threshold_begining) & (
-        df['Slope'].shift(1) >= threshold_begining)
-    slope_index = [x for x in df[cond].index.tolist()]
-    df = df.drop(df.loc[: slope_index[0]].index.tolist())
-    cond = (df['Slope'] < threshold_end) & (
-        df['Slope'].shift(1) >= threshold_end)
-    slope_index = [x for x in df[cond].index.tolist()]
-    df = df.drop(df.loc[slope_index[-1]:].index.tolist())
-    return df
+def cut_begining(list_df, threshold_begining=1.0):
+    """
+    Cut the first item of the dataframe list to remove the part when the HR curve is too steep
+
+    Args:
+        list_df (list of Dataframe): list of the levels of the test
+        threshold_begining (float, optional): detection threshold of the curve's steepness. Defaults to 1.0.
+
+    Returns:
+        list of Dataframe: Updated list
+    """
+    print("--cut_begining--")
+    cond = (list_df[0]['Slope'] < threshold_begining) & (
+        list_df[0]['Slope'].shift(1) >= threshold_begining)
+    slope_index = list_df[0][cond].index.tolist()[-1]
+    list_df[0] = list_df[0].drop(list_df[0].loc[: slope_index].index.tolist())
+    return list_df
 
 
 def parse_data(content, filename):
+    """
+    returns the content of a file, depending of the type of the file
+
+    Args:
+        content (str): content of the file
+        filename (str): name of the file
+
+    Returns:
+        str: content of the file
+    """
     content_type, content_string = content.split(",")
     decoded = base64.b64decode(content_string)
     try:
@@ -89,6 +116,7 @@ def parse_data(content, filename):
             return pd.read_excel(io.BytesIO(decoded))
 
         elif "Details.txt" in filename:
+            # find the muscle groups in the file
             file = decoded.decode('utf-8')
             m = re.findall("\) - ([\w\s+]+)\n", file)
             return m
@@ -99,6 +127,16 @@ def parse_data(content, filename):
 
 
 def create_figure(data, slope=True):
+    """
+    Create figure with the different muscles group and the HR
+
+    Args:
+        data (list): [0] contains a Dataframe with the data to plot, [1] contains the muscle groups
+        slope (bool, optional): display the slope of the HR of not. Defaults to True.
+
+    Returns:
+        go.Figure : figure to be plotted
+    """
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     for n in data[1]:
@@ -134,6 +172,9 @@ def create_figure(data, slope=True):
 
 
 def create_filtered_figure(data, slope=True):
+    """
+    Same as create_figure, but the data is a list of dataframes of same columns, that has to be concatenated into one big df.
+    """
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     data[0] = pd.concat(data[0])

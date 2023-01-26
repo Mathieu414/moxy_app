@@ -84,13 +84,16 @@ def get_store_callbacks(debug=True):
             if len(stored_data[value]) >= 3:
                 df_selected = pd.read_json(stored_data[value][2])
             if len(stored_data[value]) >= 4:
-                df_filtered = pd.read_json(stored_data[value][3])
+                df_filtered = stored_data[value][3]
+                for n in range(len(df_filtered)):
+                    df_filtered[n] = pd.read_json(df_filtered[n])
             if (seuil1 is not None) and (seuil1 != 0):
                 df["Seuil 1"] = seuil1
                 if df_selected is not None:
                     df_selected["Seuil 1"] = seuil1
                 if df_filtered is not None:
-                    df_filtered["Seuil 1"] = seuil1
+                    for n in range(len(df_filtered)):
+                        df_filtered[n]["Seuil 1"] = seuil1
             if (seuil2 is not None) and (seuil2 != 0):
                 if debug:
                     print("seuil2 is not None and not 0")
@@ -98,14 +101,16 @@ def get_store_callbacks(debug=True):
                 if df_selected is not None:
                     df_selected["Seuil 2"] = seuil2
                 if df_filtered is not None:
-                    df_filtered["Seuil 2"] = seuil2
+                    for n in range(len(df_filtered)):
+                        df_filtered[n]["Seuil 2"] = seuil2
             df = df.to_json()
             stored_data[value][0] = df
             if df_selected is not None:
                 df_selected = df_selected.to_json()
                 stored_data[value][2] = df_selected
             if df_filtered is not None:
-                df_filtered = df_filtered.to_json()
+                for n in range(len(df_filtered)):
+                    df_filtered[n] = df_filtered[n].to_json()
                 stored_data[value][3] = df_filtered
             stored_seuils[value] = [seuil1, seuil2]
             return [stored_data, stored_seuils, no_update]
@@ -146,19 +151,8 @@ def get_store_callbacks(debug=True):
                     data_selected = pd.read_json(stored_data[value][2])
                     list_data_filtered = fc.cut_pauses(
                         data_selected, float(detect_threshold))[0]
-                    """
-                    data_selected = fc.cut_begining_end(data_selected)
-
-                    # smooth the data again
-                    for n in stored_data[value][1]:
-                        data_selected[n] = signal.savgol_filter(
-                            data_selected[n], 40, 2)
-
-                    # check if HR is present
-                    if "HR[bpm]" in data_selected.columns:
-                        data_selected["HR[bpm]"] = signal.savgol_filter(
-                            data_selected["HR[bpm]"], 40, 2)
-                    """
+                    list_data_filtered = fc.cut_begining(
+                        list_data_filtered)
 
                     for n in range(len(list_data_filtered)):
                         list_data_filtered[n] = list_data_filtered[n].to_json()
@@ -178,3 +172,88 @@ def get_store_callbacks(debug=True):
             if debug:
                 print("prevent update data_upload")
             raise PreventUpdate
+
+    @callback(
+        Output("analytics", "data"),
+        Input('test-filter-chart', 'figure'),
+        [State('data-upload', 'data'),
+         State("test-choice", 'value'),
+         State("seuils", 'data')],
+        prevent_initial_call=True
+    )
+    def compute_muscular_thresholds(fig, stored_data, value, seuils):
+        if debug:
+            print("--compute_muscular_thresholds--")
+        if "data" in fig.keys():
+            analytics = [[], []]
+            df_filtered = stored_data[value][3]
+            for n in range(len(df_filtered)):
+                df_filtered[n] = pd.read_json(df_filtered[n])
+            # check if there is any thresholds in store
+            if seuils[value] != [0, 0]:
+                print("seuils are not None")
+                threshold_muscul = [[], []]
+                df_filtered = stored_data[value][3]
+                if seuils[value][0] > 0:
+                    if debug:
+                        print("compute the first threshod")
+                    # iterate over the levels of the test
+                    for n in range(len(df_filtered)):
+                        cond = (df_filtered[n]["HR[bpm]"] > df_filtered[n]["Seuil 1"]) & (
+                            df_filtered[n]["HR[bpm]"].shift(1) <= df_filtered[n]["Seuil 1"])
+                        if not df_filtered[n][cond].empty:
+                            if debug:
+                                print("threshold 1 found")
+                            indexes = df_filtered[n][cond].index.tolist()
+                            target_muscul = df_filtered[n].loc[indexes[0] -
+                                                               5: indexes[0]+5]
+                            if len(indexes) > 1:
+                                if debug:
+                                    print("several matches found")
+                                # iterate over the matches found
+                                for i in range(len(indexes)-1):
+                                    target_muscul = pd.concat(
+                                        [target_muscul, df_filtered[n].loc[indexes[i+1]-5: indexes[i+1]+5]])
+                            # iterate over the muscle groups
+                            for m in stored_data[value][1]:
+                                threshold_muscul[0].append(
+                                    target_muscul[m].mean())
+                if seuils[value][1] > 0:
+                    if debug:
+                        print("compute the second threshod")
+                    # iterate over the levels of the test
+                    for n in range(len(df_filtered)):
+                        cond = (df_filtered[n]["HR[bpm]"] > df_filtered[n]["Seuil 2"]) & (
+                            df_filtered[n]["HR[bpm]"].shift(1) <= df_filtered[n]["Seuil 2"])
+                        if not df_filtered[n][cond].empty:
+                            if debug:
+                                print("threshold 2 found")
+                            indexes = df_filtered[n][cond].index.tolist()
+                            target_muscul = df_filtered[n].loc[indexes[0] -
+                                                               5: indexes[0]+5]
+                            if len(indexes) > 1:
+                                if debug:
+                                    print("several matches found")
+                                # iterate over the matches found
+                                for i in range(len(indexes)-1):
+                                    target_muscul = pd.concat(
+                                        [target_muscul, df_filtered[n].loc[indexes[i+1]-5: indexes[i+1]+5]])
+                            # iterate over the muscle groups
+                            for m in stored_data[value][1]:
+                                threshold_muscul[1].append(
+                                    target_muscul[m].mean())
+                print(threshold_muscul)
+                analytics[1] = threshold_muscul
+
+            # find min and max for each muscular groups
+            df_filtered_concat = pd.concat(df_filtered)
+            min_max = []
+            for m in stored_data[value][1]:
+                min_max.append(df_filtered_concat[m].min())
+            print(min_max)
+            analytics[0] = min_max
+
+            print(analytics)
+            return analytics
+        else:
+            return None

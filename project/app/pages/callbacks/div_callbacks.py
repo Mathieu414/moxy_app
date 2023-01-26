@@ -15,7 +15,9 @@ def get_div_callbacks(debug=True):
     def add_hr_graphs(value, data):
         if (value is not None) and (data is not None):
             if len(data[value]) >= 4:
-                data_filtered = pd.read_json(data[value][3])
+                for n in range(len(data[value][3])):
+                    data[value][3][n] = pd.read_json(data[value][3][n])
+                data_filtered = pd.concat(data[value][3])
                 if "HR[bpm]" in data_filtered.columns:
                     children = [
                         html.H2("Desoxygénation musculaire en fonction du HR")]
@@ -76,15 +78,69 @@ def get_div_callbacks(debug=True):
         if value is not None:
             if len(stored_data[value]) >= 3:
                 data_selected = pd.read_json(stored_data[value][2])
-                errors = None
-                if fc.cut_pauses(data_selected)[1] is not None:
-                    errors = [html.P(fc.cut_pauses(data_selected, filter_value)[
-                                     1], className="error")]
-                if errors is not None:
-                    return errors
+                message = None
+                print(filter_value)
+                (result, message) = fc.cut_pauses(
+                    data_selected, float(filter_value))
+                if message is not None:
+                    if len(result) == 1:
+                        return html.P(message, className="error")
+                    if len(result) > 1:
+                        return html.P(message, className="success")
+                    else:
+                        raise PreventUpdate
                 else:
                     raise PreventUpdate
             else:
                 return html.P("Pas de données selectionnées", className="error")
         else:
             return html.P("Pas de test selectionné", className="error")
+
+    @callback(
+        Output('div-table', "children"),
+        Input("analytics", "data"),
+        [State('data-upload', 'data'),
+         State("test-choice", 'value')],
+        prevent_initial_call=True
+    )
+    def update_results_table(data, stored_data, value):
+        if data:
+            lines = []
+            head = []
+            body = []
+            head = [html.Th("Groupes musculaires", scope="col")]
+
+            for m in stored_data[value][1]:
+                lines.append([html.Td(m)])
+
+            # fill with the threshold data
+            if len(data[1]) > 0:
+                for i, seuil in enumerate(data[1]):
+                    if len(seuil) > 0:
+                        head.append(
+                            html.Th(("Seuil " + str(i+1)), scope="col"))
+                        for j in range(len(stored_data[value][1])):
+                            lines[j].append(html.Td(round(seuil[j], 1)))
+
+            # fill with the minimal data
+            if len(data[0]) > 0:
+                head.append(html.Th(("Desoxygénation minimale"), scope="col"))
+                for j in range(len(data[0])):
+                    lines[j].append(html.Td(round(data[0][j], 1)))
+
+            if len(lines) > 0:
+                for i in range(len(lines)):
+                    body.append(html.Tr(lines[i]))
+
+            content = html.Article(
+                [html.H2("Valeurs de référence"),
+                 html.Table(
+                    [html.Thead(children=head),
+                     html.Tbody(
+                        body
+                    )])]
+            )
+
+            return content
+        else:
+            return None
