@@ -185,7 +185,7 @@ def get_store_callbacks(debug=True):
         if debug:
             print("--compute_muscular_thresholds--")
         if "data" in fig.keys():
-            analytics = [[], []]
+            analytics = [[], [], []]
             df_filtered = stored_data[value][3]
             for n in range(len(df_filtered)):
                 df_filtered[n] = pd.read_json(df_filtered[n])
@@ -218,6 +218,7 @@ def get_store_callbacks(debug=True):
                             for m in stored_data[value][1]:
                                 threshold_muscul[0].append(
                                     target_muscul[m].mean())
+
                 if seuils[value][1] > 0:
                     if debug:
                         print("compute the second threshod")
@@ -252,6 +253,10 @@ def get_store_callbacks(debug=True):
                 min_max.append(df_filtered_concat[m].min())
             print(min_max)
             analytics[0] = min_max
+
+            # compute the time spent in the zones
+            analytics[2] = fc.get_time_zones(
+                [df_filtered_concat, stored_data[value][1]], analytics[1])
 
             print(analytics)
             return analytics
