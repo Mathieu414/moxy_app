@@ -4,6 +4,10 @@ import pandas as pd
 import numpy as np
 from scipy import signal
 import pages.utils.functions as fc
+import pages.utils.read_xml as read_xml
+
+import base64
+import io
 
 
 def get_store_callbacks(debug=True):
@@ -26,6 +30,19 @@ def get_store_callbacks(debug=True):
         prevent_initial_call=True,
     )
     def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, stored_data, stored_seuils, detect_threshold, stored_detection_threshold):
+        """
+        function to modify the data in the data-upload Store component.
+
+        Returns:
+            list : 
+                in [0], data-upload.data : list containing the figures data for each threshold :
+                    in [0] : dataframe containing the raw data imported
+                    in [1] : list containing the different muscles contained in the "Details.txt" file
+                    (optional) in [2] : dataframe containing the selected data from [0]
+                    (optional) in [3] : dataframe containing the filtered data from [1]
+                in [1], seuils.data : list containing a list of thresholds for each test
+                in [2], detection-threshold.data : list containing the detection threshold values for each test
+        """
         if debug:
             print("--data-upload--")
 
@@ -257,3 +274,19 @@ def get_store_callbacks(debug=True):
             return analytics
         else:
             return None
+
+    @callback(
+        Output("vo2-data", "data"),
+        [Input("vo2-upload", "contents")]
+    )
+    def store_xml(content):
+        if debug:
+            print('--store_xml--')
+        if content:
+            content_type, content_string = content.split(",")
+            decoded = base64.b64decode(content_string)
+            print(decoded)
+            df = read_xml.parse_xml(decoded)
+            return df.to_json()
+        else:
+            raise PreventUpdate

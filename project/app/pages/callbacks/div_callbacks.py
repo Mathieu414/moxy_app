@@ -1,4 +1,4 @@
-from dash import html, dcc, Input, Output, callback, State
+from dash import html, dcc, Input, Output, callback, State, dash_table
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.graph_objects as go
@@ -144,3 +144,14 @@ def get_div_callbacks(debug=True):
             return content
         else:
             return None
+
+    @callback(
+        Output("xml-div", "children"),
+        [Input("vo2-data", "data")]
+    )
+    def display_xml(data):
+        if data:
+            data = pd.read_json(data)
+            return dash_table.DataTable(
+                data=data.to_dict('records'),
+            )

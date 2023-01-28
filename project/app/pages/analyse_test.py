@@ -49,6 +49,19 @@ layout = html.Div(
                 id="test-choice")],
             className="menu",
         ),
+        html.Article(children=[
+            html.P(
+                'Charger le fichier de VO2'),
+            dcc.Upload(
+                id='vo2-upload',
+                children=html.Button(
+                    'Upload'),
+                # Allow multiple files to be uploaded
+                multiple=False
+            )],
+            className="menu",
+        ),
+        html.Div(id="xml-div"),
 
         # graphs
         html.Article(
@@ -116,6 +129,7 @@ layout = html.Div(
         dcc.Store(id='data-selection', storage_type='session'),
         dcc.Store(id='data-filtered', storage_type='session'),
         dcc.Store(id='detection-threshold', storage_type='session'),
+        dcc.Store(id='vo2-data', storage_type='session'),
         dcc.Store(id='analytics', storage_type='session')
     ])
 
