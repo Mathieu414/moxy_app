@@ -110,3 +110,29 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
     # merge the two dfs
     moxy_data = moxy_data.merge(df, on='Time[s]')
     return moxy_data
+
+
+def get_time_zones(data, seuils_muscu):
+    print("--get-time-zones--")
+    if len(seuils_muscu) > 0:
+        time_z1 = []
+        time_z2 = []
+        time_z3 = []
+        for i, m in enumerate(data[1]):
+            print("Seuils Musculaires : ", seuils_muscu)
+            if len(seuils_muscu[0]) > 0:
+                print(i)
+                print(data[0][m][data[0][m] < seuils_muscu[0][i]])
+                time_z1.append(
+                    len(data[0][m][data[0][m] > seuils_muscu[0][i]].index.tolist()))
+            if len(seuils_muscu[1]) > 0:
+                time_z2.append(len(data[0][m][(data[0][m] <= seuils_muscu[0][i]) & (
+                    data[0][m] > seuils_muscu[1][i])].index.tolist()))
+                time_z3.append(
+                    len(data[0][m][data[0][m] < seuils_muscu[1][i]].index.tolist()))
+        print(time_z1)
+        print(time_z2)
+        print(time_z3)
+        return ([time_z1, time_z2, time_z3])
+    else:
+        return []
