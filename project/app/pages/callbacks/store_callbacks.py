@@ -306,7 +306,7 @@ def get_store_callbacks(debug=True):
 
             # compute the time spent in the zones
             analytics[2] = fc.get_time_zones(
-                [df_filtered_concat, stored_data[value][1]], analytics[1])
+                [df_filtered_concat, stored_data[value][1][0]], analytics[1])
 
             print(analytics)
             return analytics

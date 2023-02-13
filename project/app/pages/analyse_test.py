@@ -48,8 +48,8 @@ layout = html.Div(
             ),
             html.Button("Effacer les données ",
                         className="contrast outline", id="clear-button", n_clicks=0),
-            dcc.Dropdown(
-                id="test-choice")],
+            dcc.Loading(dcc.Dropdown(
+                id="test-choice"))],
             className="menu",
         ),
         html.Article(children=[
@@ -85,7 +85,7 @@ layout = html.Div(
                                      id="seuil2", type='number', debounce=True, disabled=True)
                              ])],
                          className='grid'),
-                html.Div(
+                dcc.Loading(html.Div(
                     children=dcc.Graph(
                         id="test-chart",
                         figure={
@@ -94,18 +94,18 @@ layout = html.Div(
                         }
                     ),
                     className="card"
-                )
+                ))
 
             ],
             className="wrapper"
         ),
         html.Div(id="zoom-chart-div", children=html.Article(children=[
             html.Div([html.H2("Courbe de la sélection")]),
-            dcc.Graph(id="test-zoom-chart",
-                      figure={
-                          'layout':
-                          pio.templates["plotly_dark_custom"].layout
-                      }),
+            dcc.Loading(dcc.Graph(id="test-zoom-chart",
+                                  figure={
+                                      'layout':
+                                      pio.templates["plotly_dark_custom"].layout
+                                  })),
             html.Hr(),
             html.Div([
                 html.Div(html.P("Paramètres de detection des pauses:"),
@@ -124,33 +124,34 @@ layout = html.Div(
         )),
         html.Div(id="filter-data-div", children=html.Article(children=[
             html.H2("Courbe filtrée", className="col-sm-9"),
-            dcc.Graph(id="test-filter-chart",
-                      figure={
-                          'layout':
-                          pio.templates["plotly_dark_custom"].layout
-                      })]
+            dcc.Loading(dcc.Graph(id="test-filter-chart",
+                                  figure={
+                                      'layout':
+                                      pio.templates["plotly_dark_custom"].layout
+                                  }))]
         )),
         html.Div(id="div-table"),
         html.Article(
             children=[
                 html.Div(html.H2("Courbe de la VO2")),
                 html.Div(
-                    children=dcc.Graph(
+                    children=dcc.Loading(dcc.Graph(
                         id="vo2-chart",
                         figure={
                             'layout':
                             pio.templates["plotly_dark_custom"].layout
                         }
-                    ),
+                    )),
                     className="card"
                 )
 
             ],
             className="wrapper"
         ),
-        html.Div(id="div-hr"),
+        dcc.Loading(html.Div(id="div-hr")),
+
         # dcc.Store stores the file data
-        dcc.Store(id='data-upload', storage_type='session'),
+        dcc.Loading(dcc.Store(id='data-upload', storage_type='session')),
         dcc.Store(id='seuils', storage_type='session'),
         dcc.Store(id='data-selection', storage_type='session'),
         dcc.Store(id='data-filtered', storage_type='session'),
