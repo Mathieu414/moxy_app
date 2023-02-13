@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import statsmodels.api as sm
 import pages.utils.functions as fc
+import datetime
 
 
 def get_div_callbacks(debug=True):
@@ -109,10 +110,17 @@ def get_div_callbacks(debug=True):
             lines = []
             head = []
             body = []
+
+            lines2 = []
+            head2 = []
+            body2 = []
+
             head = [html.Th("Groupes musculaires", scope="col")]
+            head2 = [html.Th("Groupes musculaires", scope="col")]
 
             for m in stored_data[value][1][0]:
                 lines.append([html.Td(m)])
+                lines2.append([html.Td(m)])
 
             # fill with the threshold data
             print(data)
@@ -130,17 +138,42 @@ def get_div_callbacks(debug=True):
                 for j in range(len(data[0])):
                     lines[j].append(html.Td(round(data[0][j], 1)))
 
+            # fill with the zones data
+            if len(data[2]) > 0:
+                for i, v in enumerate(data[2]):
+                    if len(v) > 0:
+                        head2.append(
+                            html.Th(("Temps zone " + str(i + 1)), scope="col"))
+                        for j, t in enumerate(v):
+                            convert = str(datetime.timedelta(seconds=t))
+                            lines2[j].append(html.Td(convert))
+
             if len(lines) > 0:
                 for i in range(len(lines)):
                     body.append(html.Tr(lines[i]))
 
-            content = html.Article(
-                [html.H2("Valeurs de référence"),
-                 html.Table(
-                    [html.Thead(children=head),
-                     html.Tbody(
+            if len(lines2) > 0:
+                for i in range(len(lines2)):
+                    body2.append(html.Tr(lines2[i]))
+
+            content2 = [html.H2("Valeurs de référence"),
+                        html.Table(
+                [html.Thead(children=head),
+                 html.Tbody(
                         body
-                    )])]
+                        )]),
+            ]
+            if len(data[2]) > 0:
+                content2.extend([
+                    html.H3("Temps dans les zones musculaires"),
+                    html.Table(
+                        [html.Thead(children=head2),
+                         html.Tbody(
+                            body2
+                        )])])
+
+            content = html.Article(
+                content2
             )
 
             return content
