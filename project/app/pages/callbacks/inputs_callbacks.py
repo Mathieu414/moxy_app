@@ -34,9 +34,10 @@ def get_threshold_callbacks(debug=True):
                 print("seuils or value is None")
             return [True, True, None, None]
 
-    @callback(Output('detect-filter', 'value'),
+    @callback([Output('prominence', 'value'),
+               Output('width', 'value')],
               Input('test-choice', 'value'),
-              State('detection-threshold', 'data')
+              State('peaks-parameters', 'data')
               )
     def set_value_detection_input(value, data):
         if debug:
@@ -46,4 +47,4 @@ def get_threshold_callbacks(debug=True):
         if (data is not None) and (value is not None):
             return data[value]
         else:
-            return None
+            return [None, None]

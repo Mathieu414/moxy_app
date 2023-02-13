@@ -7,94 +7,41 @@ from dash import html
 import re
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
+from scipy.signal import find_peaks
 
 
-def calc_slope(x):
-    slope = np.polyfit(range(len(x)), x, 1)[0]
-    return slope
-
-# set min_periods=2 to allow subsets less than 60.
-# use [4::5] to select the results you need.
-
-
-def df_slope(df):
-    result = df.rolling(10, min_periods=2, center=True).apply(calc_slope)
-    return result
-
-
-def cut_pauses(df, threshold=-1.0):
-    """
-    Cut the pauses between the levels of the VO2 test
+def df_find_peaks(df, prominence=8, width=20):
+    """Function to find the negative peaks
 
     Args:
-        df (DataFrame): containing the data previously selected
-        threshold (float, optional): Threshold for the detection of the slope. Defaults to -1.0.
+        df (DataFrame): 1 column pandas Dataframe
 
     Returns:
-        tuple: 
-            list : contains a list of the levels detected
-            str : error message
+        1D array: index location of the peaks
     """
-    print("--cut_pauses--")
-    cond = (df['Slope'] < threshold) & (df['Slope'].shift(1) >= threshold)
-    slope_index = [x - 5 for x in df[cond].index.tolist()]
-    # check if there is any slope matching
-    if len(slope_index) > 0:
+    print("--df_find_peaks--")
+    return find_peaks(- df.to_numpy(), prominence=prominence, width=width)[0]
 
+
+def cut_peaks(df, range=20, prominence=8, width=20):
+    print("--cut_peaks--")
+    peaks = df_find_peaks(df["HR[bpm]"], prominence, width)
+    if len(peaks) > 0:
         list_levels = []
-
-        hr_threshold = df.loc[slope_index]['HR[bpm]']
-        next_hr = []
-
-        for (value, index) in zip(hr_threshold, hr_threshold.index):
-
-            condition_find_next_hr = (df['HR[bpm]'] > value) & (
-                df['HR[bpm]'].shift(1) <= value) & (df.index > index)
-            if not df[condition_find_next_hr].empty:
-                next_hr.append(df[condition_find_next_hr].iloc[0])
-
-                # put the levels detected in a list
-                if len(next_hr) == 1:
-                    list_item = df.loc[:next_hr[0].name]
-                    list_item.loc[index:next_hr[0].name] = np.nan
-                    list_levels.append(list_item)
-                else:
-                    list_item = df.loc[next_hr[-2].name:next_hr[-1].name]
-                    list_item.loc[index:next_hr[-1].name] = np.nan
-                    list_levels.append(list_item)
-        print(next_hr[-1].name)
-        print(hr_threshold.index.tolist()[-1])
-        if next_hr[-1].name > hr_threshold.index.tolist()[-1]:
-            list_item = df.loc[next_hr[-1].name:]
-            list_levels.append(list_item)
-        else:
-            list_item = df.loc[next_hr[-1].name:hr_threshold.index.tolist()[-1]]
-            list_item.loc[index:next_hr[-1].name] = np.nan
-            list_levels.append(list_item)
-
-        print(len(list_levels))
+        if peaks[0]-range >= df.iloc[0].name:
+            df.iloc[peaks[0]-range:peaks[0]+range] = np.nan
+            list_levels.append(df.iloc[:peaks[0]+range])
+        if len(peaks) >= 1:
+            for i, v in enumerate(peaks[1:]):
+                df.iloc[v-range:v+range] = np.nan
+                list_levels.append(df.iloc[peaks[i]+range:v+range])
+        if peaks[-1]+range <= df.iloc[-1].name:
+            list_levels.append(df.iloc[peaks[-1]+range:])
         return (list_levels, str(len(list_levels)) + " paliers détectés")
     else:
         return ([df], "Erreur : pas de pauses détectées")
-
-
-def cut_begining(list_df, threshold_begining=1.0):
-    """
-    Cut the first item of the dataframe list to remove the part when the HR curve is too steep
-
-    Args:
-        list_df (list of Dataframe): list of the levels of the test
-        threshold_begining (float, optional): detection threshold of the curve's steepness. Defaults to 1.0.
-
-    Returns:
-        list of Dataframe: Updated list
-    """
-    print("--cut_begining--")
-    cond = (list_df[0]['Slope'] < threshold_begining) & (
-        list_df[0]['Slope'].shift(1) >= threshold_begining)
-    slope_index = list_df[0][cond].index.tolist()[-1]
-    list_df[0] = list_df[0].drop(list_df[0].loc[: slope_index].index.tolist())
-    return list_df
 
 
 def parse_data(content, filename):
@@ -119,119 +66,47 @@ def parse_data(content, filename):
             # find the muscle groups in the file
             file = decoded.decode('utf-8')
             m = re.findall("\) - ([\w\s+]+)\n", file)
-            return m
+            # for i, match in enumerate(m):
+            #   if any(word in match for word in re_exeptions):
+            #      m.pop(i)
+            t = re.findall("Start Time: (.*?)\n", file)[0]
+            d = re.findall("Workout Date: (.*?)\n", file)[0]
+            return [m, t, d]
 
     except Exception as e:
         print(e)
         return html.Div(["There was an error processing this file."])
 
 
-def create_figure(data, slope=True):
-    """
-    Create figure with the different muscles group and the HR
-
-    Args:
-        data (list): [0] contains a Dataframe with the data to plot, [1] contains the muscle groups
-        slope (bool, optional): display the slope of the HR of not. Defaults to True.
-
-    Returns:
-        go.Figure : figure to be plotted
-    """
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-    for n in data[1]:
-        fig.add_trace(go.Scatter(
-            x=data[0]["Time[s]"], y=data[0][n], name=n,  hovertemplate="%{y:.2f} %<extra></extra>", mode='lines+markers'), secondary_y=False)
-
-    if "HR[bpm]" in data[0].columns:
-        fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["HR[bpm]"],
-                                 name="HR", hovertemplate="%{y:.2f} bpm<extra></extra>", mode='lines+markers'), secondary_y=True)
-
-    if "Seuil 1" in data[0].columns:
-        fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["Seuil 1"], line_width=3, line_dash="dash",
-                                 line_color="green", name="Seuil 1"), secondary_y=True)
-
-    if "Seuil 2" in data[0].columns:
-        fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["Seuil 2"], line_width=3, line_dash="dash",
-                                 line_color="yellow", name="Seuil 2"), secondary_y=True)
-
-    if slope:
-        if "Slope" in data[0].columns:
-            fig.add_trace(go.Scatter(
-                x=data[0]["Time[s]"], y=data[0]["Slope"]*100, line_width=3, name="Slope"))
-
-    fig.update_traces(marker_size=1)
-    fig.update_xaxes(showgrid=False, title="Temps")
-    fig.update_yaxes(title_text="Desoxygenation", secondary_y=False)
-    fig.update_layout(
-        clickmode='event+select',
-        height=500,
-        margin=dict(l=20, r=20, t=30, b=20))
-
-    return fig
-
-
-def create_filtered_figure(data, slope=True):
-    """
-    Same as create_figure, but the data is a list of dataframes of same columns, that has to be concatenated into one big df.
-    """
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-    data[0] = pd.concat(data[0])
-
-    for n in data[1]:
-        fig.add_trace(go.Scatter(
-            x=data[0]["Time[s]"], y=data[0][n], name=n,  hovertemplate="%{y:.2f} %<extra></extra>", mode='lines+markers'), secondary_y=False)
-
-    if "HR[bpm]" in data[0].columns:
-        fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["HR[bpm]"],
-                                 name="HR", hovertemplate="%{y:.2f} bpm<extra></extra>", mode='lines+markers'), secondary_y=True)
-
-    if "Seuil 1" in data[0].columns:
-        fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["Seuil 1"], line_width=3, line_dash="dash",
-                                 line_color="green", name="Seuil 1"), secondary_y=True)
-
-    if "Seuil 2" in data[0].columns:
-        fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["Seuil 2"], line_width=3, line_dash="dash",
-                                 line_color="yellow", name="Seuil 2"), secondary_y=True)
-
-    if slope:
-        if "Slope" in data[0].columns:
-            fig.add_trace(go.Scatter(
-                x=data[0]["Time[s]"], y=data[0]["Slope"]*100, line_width=3, name="Slope"))
-
-    fig.update_traces(marker_size=1)
-    fig.update_xaxes(showgrid=False, title="Temps")
-    fig.update_yaxes(title_text="Desoxygenation", secondary_y=False)
-    fig.update_layout(
-        clickmode='event+select',
-        height=500,
-        margin=dict(l=20, r=20, t=30, b=20))
-
-    return fig
-
-
-def get_time_zones(data, seuils_muscu):
-    print("--get-time-zones--")
-    if len(seuils_muscu) > 0:
-        time_z1 = []
-        time_z2 = []
-        time_z3 = []
-        for i, m in enumerate(data[1]):
-            print(seuils_muscu)
-            if len(seuils_muscu[0]) > 0:
-                print(i)
-                print(data[0][m][data[0][m] < seuils_muscu[0][i]])
-                time_z1.append(
-                    len(data[0][m][data[0][m] > seuils_muscu[0][i]].index.tolist()))
-            if len(seuils_muscu[1]) > 0:
-                time_z2.append(len(data[0][m][(data[0][m] <= seuils_muscu[0][i]) & (
-                    data[0][m] > seuils_muscu[1][i])].index.tolist()))
-                time_z3.append(
-                    len(data[0][m][data[0][m] < seuils_muscu[1][i]].index.tolist()))
-        print(time_z1)
-        print(time_z2)
-        print(time_z3)
-        return ([time_z1, time_z2, time_z3])
-    else:
-        return []
+def synchronise_moxy_vo2(moxy_data, vo2_df):
+    # remove the line with the units
+    vo2_df = vo2_df.iloc[1:]
+    # transform the time into seconds
+    vo2_df['Temps'] = (pd.to_datetime(
+        vo2_df['Temps']) - pd.to_datetime(
+        vo2_df['Temps'][1])).dt.total_seconds().round().astype(int)
+    vo2_df = vo2_df.rename(
+        columns={"Temps": "Time[s]"})
+    # tranform the hr into numeric values
+    vo2_df["Fréquence cardiaque"] = pd.to_numeric(
+        vo2_df["Fréquence cardiaque"], errors='coerce')
+    moxy_data["HR[bpm]"] = pd.to_numeric(
+        moxy_data["HR[bpm]"], errors='coerce')
+    # dataframe to numpy
+    x = vo2_df[["Time[s]", "Fréquence cardiaque"]].to_numpy()
+    y = moxy_data[["Time[s]", "HR[bpm]"]].to_numpy()
+    # using the fastdtw function to match the datasets
+    distance, path = fastdtw(
+        x, y, dist=euclidean)
+    # replace the index with the VO2 values
+    for i, (index_vo2, index_moxy) in enumerate(path):
+        path[i] = (float(vo2_df.loc[index_vo2+1]
+                         ["Consommation d'Oxygène"]), index_moxy)
+    # set the index, and remove the duplicates
+    df = pd.DataFrame(path, columns=["VO2", "index"]).set_index(
+        "index")
+    df = df[~df.index.duplicated(keep='first')]
+    df.index.names = ['Time[s]']
+    # merge the two dfs
+    moxy_data = moxy_data.merge(df, on='Time[s]')
+    return moxy_data

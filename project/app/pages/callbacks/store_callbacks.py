@@ -4,13 +4,17 @@ import pandas as pd
 import numpy as np
 from scipy import signal
 import pages.utils.functions as fc
+import pages.utils.read_xml as read_xml
+
+import base64
+import io
 
 
 def get_store_callbacks(debug=True):
     @callback(
         [Output('data-upload', 'data'),
          Output('seuils', 'data'),
-         Output("detection-threshold", "data")],
+         Output("peaks-parameters", "data")],
         [Input("test-upload", "contents"),
          Input("test-upload", "filename"),
          Input("seuil1", 'value'),
@@ -18,14 +22,33 @@ def get_store_callbacks(debug=True):
          Input("clear-button", "n_clicks"),
          Input("test-choice", 'value'),
          Input("test-chart", "selectedData"),
-         Input("filter-selection-button", "n_clicks")],
+         Input("filter-selection-button", "n_clicks"),
+         Input("vo2-data", "data")],
         [State("data-upload", 'data'),
          State("seuils", "data"),
-         State("detect-filter", "value"),
-         State("detection-threshold", "data")],
+         State("prominence", "value"),
+         State("width", "value"),
+         State("peaks-parameters", "data")],
         prevent_initial_call=True,
     )
-    def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, stored_data, stored_seuils, detect_threshold, stored_detection_threshold):
+    def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, vo2_data,
+                    stored_data, stored_seuils, prominence, width, stored_peaks_param):
+        """
+        function to modify the data in the data-upload Store component.
+
+        Returns:
+            list : 
+                in [0], data-upload.data : list containing the figures data for each threshold :
+                    in [0] : dataframe containing the raw data imported
+                    in [1] : 
+                        in [0] : list containing the different muscles contained in the "Details.txt" file
+                        in [1] : string containing the start time of the record
+                        in [2] : string containing the date
+                    (optional) in [2] : dataframe containing the selected data from [0]
+                    (optional) in [3] : dataframe containing the filtered data from [1]
+                in [1], seuils.data : list containing a list of thresholds for each test
+                in [2], detection-threshold.data : list containing the prominence and width for each tests
+        """
         if debug:
             print("--data-upload--")
 
@@ -38,7 +61,7 @@ def get_store_callbacks(debug=True):
 
             smo_cols = [col for col in data[x_id].columns if 'SmO2' in col]
 
-            col_names = dict(zip(smo_cols, data[t_id]))
+            col_names = dict(zip(smo_cols, data[t_id][0]))
 
             data[x_id].rename(columns=col_names, inplace=True)
 
@@ -48,7 +71,7 @@ def get_store_callbacks(debug=True):
             data[0].replace(0, np.nan, inplace=True)
 
             # smooth the data
-            for n in data[1]:
+            for n in data[1][0]:
                 data[0][n] = signal.savgol_filter(data[0][n], 40, 3)
 
             # value for the thresholds by default
@@ -64,10 +87,10 @@ def get_store_callbacks(debug=True):
             if stored_data:
                 stored_data.append([data[0], data[1]])
                 stored_seuils.append(new_seuils)
-                stored_detection_threshold.append(-1.0)
-                return [stored_data, stored_seuils, stored_detection_threshold]
+                stored_peaks_param.append([8, 20])
+                return [stored_data, stored_seuils, stored_peaks_param]
             else:
-                return [[[data[0], data[1]]], [new_seuils], [-1.0]]
+                return [[[data[0], data[1]]], [new_seuils], [[8, 20]]]
 
         if debug:
             print("valeur de seuil1")
@@ -131,15 +154,43 @@ def get_store_callbacks(debug=True):
                     selected_time.append(point['x'])
                 data_selected = data_selected.query(
                     "`Time[s]` == @selected_time")
-                df = pd.DataFrame()
-                df["Slope"] = fc.df_slope(data_selected["HR[bpm]"])
-                data_selected = data_selected.join(df)
-                print(data_selected)
+                if vo2_data:
+                    if str(value) in vo2_data.keys():
+                        if debug:
+                            print("synchronize vo2")
+                        [vo2_df, _] = vo2_data[str(value)]
+                        data_selected = fc.synchronise_moxy_vo2(
+                            data_selected, pd.read_json(vo2_df))
                 if len(stored_data[value]) >= 3:
                     stored_data[value][2] = data_selected.to_json()
                 else:
                     stored_data[value].append(data_selected.to_json())
                 return [stored_data, no_update, no_update]
+
+        # case if the vo2 data is uploaded after the data has been selected
+        if (ctx.triggered_id == "vo2-data") and (len(stored_data[value]) >= 3):
+            if value is not None:
+                if vo2_data:
+                    data_selected = pd.read_json(stored_data[value][2])
+                    if vo2_data[str(value)]:
+                        if debug:
+                            print("synchronize vo2")
+                        [vo2_df, _] = vo2_data[str(value)]
+                        data_selected = fc.synchronise_moxy_vo2(
+                            data_selected, pd.read_json(vo2_df))
+
+                        if len(stored_data[value]) >= 4:
+                            list_data_filtered = fc.cut_peaks(
+                                data_selected, prominence=prominence, width=width)[0]
+
+                            for n in range(len(list_data_filtered)):
+                                list_data_filtered[n] = list_data_filtered[n].to_json(
+                                )
+
+                            stored_data[value][3] = list_data_filtered
+
+                        stored_data[value][2] = data_selected.to_json()
+                        return [stored_data, no_update, no_update]
 
         if (ctx.triggered_id == "filter-selection-button"):
             if debug:
@@ -149,10 +200,8 @@ def get_store_callbacks(debug=True):
                     if debug:
                         print("data selection is not empty")
                     data_selected = pd.read_json(stored_data[value][2])
-                    list_data_filtered = fc.cut_pauses(
-                        data_selected, float(detect_threshold))[0]
-                    list_data_filtered = fc.cut_begining(
-                        list_data_filtered)
+                    list_data_filtered = fc.cut_peaks(
+                        data_selected, prominence=prominence, width=width)[0]
 
                     for n in range(len(list_data_filtered)):
                         list_data_filtered[n] = list_data_filtered[n].to_json()
@@ -162,12 +211,13 @@ def get_store_callbacks(debug=True):
                     else:
                         stored_data[value].append(list_data_filtered)
 
-                    stored_detection_threshold[value] = detect_threshold
-                    return [stored_data, no_update, stored_detection_threshold]
+                    stored_peaks_param[value] = [prominence, width]
+                    return [stored_data, no_update, stored_peaks_param]
                 else:
                     raise PreventUpdate
             else:
                 raise PreventUpdate
+
         else:
             if debug:
                 print("prevent update data_upload")
@@ -215,7 +265,7 @@ def get_store_callbacks(debug=True):
                                     target_muscul = pd.concat(
                                         [target_muscul, df_filtered[n].loc[indexes[i+1]-5: indexes[i+1]+5]])
                             # iterate over the muscle groups
-                            for m in stored_data[value][1]:
+                            for m in stored_data[value][1][0]:
                                 threshold_muscul[0].append(
                                     target_muscul[m].mean())
 
@@ -240,7 +290,7 @@ def get_store_callbacks(debug=True):
                                     target_muscul = pd.concat(
                                         [target_muscul, df_filtered[n].loc[indexes[i+1]-5: indexes[i+1]+5]])
                             # iterate over the muscle groups
-                            for m in stored_data[value][1]:
+                            for m in stored_data[value][1][0]:
                                 threshold_muscul[1].append(
                                     target_muscul[m].mean())
                 print(threshold_muscul)
@@ -249,7 +299,7 @@ def get_store_callbacks(debug=True):
             # find min and max for each muscular groups
             df_filtered_concat = pd.concat(df_filtered)
             min_max = []
-            for m in stored_data[value][1]:
+            for m in stored_data[value][1][0]:
                 min_max.append(df_filtered_concat[m].min())
             print(min_max)
             analytics[0] = min_max
@@ -262,3 +312,24 @@ def get_store_callbacks(debug=True):
             return analytics
         else:
             return None
+
+    @callback(
+        Output("vo2-data", "data"),
+        [Input("vo2-upload", "contents")],
+        State("test-choice", 'value'),
+        State("vo2-data", "data")
+    )
+    def store_xml(content, value, stored_content):
+        if debug:
+            print('--store_xml--')
+        if content:
+            content_type, content_string = content.split(",")
+            decoded = base64.b64decode(content_string)
+            [df, time] = read_xml.parse_xml(decoded)
+            if stored_content:
+                stored_content[value] = [df.to_json(), time]
+                return stored_content
+            else:
+                return {value: [df.to_json(), time]}
+        else:
+            raise PreventUpdate
