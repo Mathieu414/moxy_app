@@ -2,7 +2,7 @@ from dash import Input, Output, State, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.io as pio
-import pages.utils.functions as fc
+import pages.utils.figures as figures
 
 
 def get_figure_callbacks(debug=True):
@@ -22,7 +22,7 @@ def get_figure_callbacks(debug=True):
             print("value is not None")
             data = data[value]
             data[0] = pd.read_json(data[0])
-            fig = fc.create_figure([data[0], data[1]])
+            fig = figures.create_figure([data[0], data[1]])
             print("create figure :")
             return fig
         if (value == 0) and (data is None):
@@ -43,7 +43,8 @@ def get_figure_callbacks(debug=True):
                 if debug:
                     print("create zoomed figure")
                 data[value][2] = pd.read_json(data[value][2])
-                fig = fc.create_figure([data[value][2], data[value][1]], True)
+                fig = figures.create_figure(
+                    [data[value][2], data[value][1]])
         return fig
 
     @ callback(
@@ -59,6 +60,26 @@ def get_figure_callbacks(debug=True):
                     print("create filtered figure")
                 for n in range(len(data[value][3])):
                     data[value][3][n] = pd.read_json(data[value][3][n])
-                fig = fc.create_filtered_figure(
-                    [data[value][3], data[value][1]], False)
+                fig = figures.create_filtered_figure(
+                    [data[value][3], data[value][1]])
+        return fig
+
+    @ callback(
+        Output('vo2-chart', 'figure'),
+        Input('test-choice', 'value'),
+        Input('data-upload', 'data')
+    )
+    def display_vo2_data(value, data):
+        print("--update_vo2_graph--")
+        fig = {'layout': pio.templates["plotly_dark_custom"].layout}
+        if (value is not None) and (data is not None):
+            data = data[value]
+            print("Longeur des données", len(data))
+            if len(data) >= 4:
+                for n in range(len(data[3])):
+                    data[3][n] = pd.read_json(data[3][n])
+                if "VO2" in data[3][0].columns:
+                    if debug:
+                        print("create vo2 figure")
+                    fig = figures.create_vo2_figure([data[3], data[1]])
         return fig

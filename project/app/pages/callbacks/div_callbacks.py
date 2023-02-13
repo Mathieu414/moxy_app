@@ -21,7 +21,7 @@ def get_div_callbacks(debug=True):
                 if "HR[bpm]" in data_filtered.columns:
                     children = [
                         html.H2("Desoxygénation musculaire en fonction du HR")]
-                    for n in data[value][1]:
+                    for n in data[value][1][0]:
                         fig = go.Figure()
                         fig.add_trace(go.Scatter(x=data_filtered["HR[bpm]"],
                                                  y=data_filtered[n],
@@ -70,18 +70,17 @@ def get_div_callbacks(debug=True):
         Input("filter-selection-button", "n_clicks"),
         [State("data-upload", 'data'),
          State("test-choice", 'value'),
-         State("detect-filter", "value")],
+         State("prominence", "value"),
+         State("width", "value")],
         prevent_initial_call=True
-
     )
-    def error_filter(n_clicks, stored_data, value, filter_value):
+    def error_filter(n_clicks, stored_data, value, prominence, width):
         if value is not None:
             if len(stored_data[value]) >= 3:
                 data_selected = pd.read_json(stored_data[value][2])
                 message = None
-                print(filter_value)
-                (result, message) = fc.cut_pauses(
-                    data_selected, float(filter_value))
+                (result, message) = fc.cut_peaks(
+                    data_selected, prominence=prominence, width=width)
                 if message is not None:
                     if len(result) == 1:
                         return html.P(message, className="error")
@@ -104,22 +103,25 @@ def get_div_callbacks(debug=True):
         prevent_initial_call=True
     )
     def update_results_table(data, stored_data, value):
+        if debug:
+            print("--update_results_table--")
         if data:
             lines = []
             head = []
             body = []
             head = [html.Th("Groupes musculaires", scope="col")]
 
-            for m in stored_data[value][1]:
+            for m in stored_data[value][1][0]:
                 lines.append([html.Td(m)])
 
             # fill with the threshold data
+            print(data)
             if len(data[1]) > 0:
                 for i, seuil in enumerate(data[1]):
                     if len(seuil) > 0:
                         head.append(
                             html.Th(("Seuil " + str(i+1)), scope="col"))
-                        for j in range(len(stored_data[value][1])):
+                        for j in range(len(stored_data[value][1][0])):
                             lines[j].append(html.Td(round(seuil[j], 1)))
 
             # fill with the minimal data
@@ -144,14 +146,3 @@ def get_div_callbacks(debug=True):
             return content
         else:
             return None
-
-    @callback(
-        Output("xml-div", "children"),
-        [Input("vo2-data", "data")]
-    )
-    def display_xml(data):
-        if data:
-            data = pd.read_json(data)
-            return dash_table.DataTable(
-                data=data.to_dict('records'),
-            )
