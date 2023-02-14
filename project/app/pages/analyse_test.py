@@ -32,7 +32,8 @@ layout = html.Div(
                     children="Application pour analyser les données moxy d'un test VO2",
                 ),
             ],
-            className="center"
+            className="center",
+            id="test-header-div"
         ),
 
         # menu
@@ -65,90 +66,96 @@ layout = html.Div(
         html.Div(id="xml-div"),
 
         # graphs
-        html.Article(
-            children=[
-                html.Div(children=[
-                    html.Div(html.H2("Courbe des groupes musculaires"),
+        html.Div([
+            html.Article(
+                children=[
+                    html.Div(children=[
+                        html.Div(html.H2("Courbe des groupes musculaires"),
                              className="col-8"),
-                ], className="row"),
-                html.P(html.B("3. Selectionnez la zone du test")),
-                html.Div(id="inputs-threshold",
-                         children=[
-                             html.Div([
-                                 html.P("Seuil 1"),
-                                 dcc.Input(
-                                     id="seuil1", type='number', debounce=True, disabled=True)
-                             ]),
-                             html.Div([
-                                 html.P("Seuil 2"),
-                                 dcc.Input(
-                                     id="seuil2", type='number', debounce=True, disabled=True)
-                             ])],
-                         className='grid'),
-                dcc.Loading(html.Div(
-                    children=dcc.Graph(
-                        id="test-chart",
-                        figure={
-                            'layout':
-                            pio.templates["plotly_dark_custom"].layout
-                        }
-                    ),
-                    className="card"
-                ))
+                    ], className="row"),
+                    html.P(html.B("3. Selectionnez la zone du test")),
+                    html.Div(id="inputs-threshold",
+                             children=[
+                                 html.Div([
+                                     html.P("Seuil 1"),
+                                     dcc.Input(
+                                         id="seuil1", type='number', debounce=True, disabled=True)
+                                 ]),
+                                 html.Div([
+                                     html.P("Seuil 2"),
+                                     dcc.Input(
+                                         id="seuil2", type='number', debounce=True, disabled=True)
+                                 ])],
+                             className='grid'),
+                    dcc.Loading(html.Div(
+                        children=dcc.Graph(
+                            id="test-chart",
+                            figure={
+                                'layout':
+                                pio.templates["plotly_dark_custom"].layout
+                            }
+                        ),
+                        className="card"
+                    ))
 
-            ],
-            className="wrapper"
-        ),
-        html.Div(id="zoom-chart-div", children=html.Article(children=[
-            html.Div([html.H2("Courbe de la sélection")]),
-            dcc.Loading(dcc.Graph(id="test-zoom-chart",
-                                  figure={
-                                      'layout':
-                                      pio.templates["plotly_dark_custom"].layout
-                                  })),
-            html.Hr(),
-            html.Div([
-                html.Div(html.P("Paramètres de detection des pauses:"),
+                ],
+                className="wrapper"
+            ),
+            html.Div(id="zoom-chart-div", children=html.Article(children=[
+                html.Div([html.H2("Courbe de la sélection")]),
+                dcc.Loading(dcc.Graph(id="test-zoom-chart",
+                                      figure={
+                                          'layout':
+                                          pio.templates["plotly_dark_custom"].layout
+                                      })),
+                html.Hr(),
+                html.Div([
+                    html.Div(html.P("Paramètres de detection des pauses:"),
                          className="col-sm-4"),
-                html.Div("", className="col-sm-7"),], className="row center"),
+                    html.Div("", className="col-sm-7"),], className="row center"),
 
-            html.Div([
-                html.Div(html.Label(["Hauteur", dcc.Input(id="prominence",
-                                                             type="number"),]), className="col-sm-2"),
-                html.Div(html.Label(["Largeur", dcc.Input(id="width",
-                                                          type="number")]), className="col-sm-2"),
-                html.Div("", className="col-sm-4"),
-                html.Button(html.B("4.Filtrer les données"), className="contrast outline col-sm-3",
-                            id="filter-selection-button", n_clicks=0),], className="row"),
-            html.Div(id='div-error-filter'),]
-        )),
-        html.Div(id="filter-data-div", children=html.Article(children=[
-            html.H2("Courbe filtrée", className="col-sm-9"),
-            dcc.Loading(dcc.Graph(id="test-filter-chart",
-                                  figure={
-                                      'layout':
-                                      pio.templates["plotly_dark_custom"].layout
-                                  }))]
-        )),
-        html.Div(id="div-table"),
-        html.Article(
-            children=[
-                html.Div(html.H2("Courbe de la VO2")),
-                html.Div(
-                    children=dcc.Loading(dcc.Graph(
-                        id="vo2-chart",
-                        figure={
-                            'layout':
-                            pio.templates["plotly_dark_custom"].layout
-                        }
-                    )),
-                    className="card"
-                )
+                html.Div([
+                    html.Div(html.Label(["Hauteur", dcc.Input(id="prominence",
+                                                              type="number"),]), className="col-sm-2"),
+                    html.Div(html.Label(["Largeur", dcc.Input(id="width",
+                                                              type="number")]), className="col-sm-2"),
+                    html.Div("", className="col-sm-4"),
+                    html.Button(html.B("4.Filtrer les données"), className="contrast outline col-sm-3",
+                                id="filter-selection-button", n_clicks=0),], className="row"),
+                html.Div(id='div-error-filter'),]
+            )),
+            html.Div(id="filter-data-div", children=html.Article(children=[
+                html.H2("Courbe filtrée", className="col-sm-9"),
+                dcc.Loading(dcc.Graph(id="test-filter-chart",
+                                      figure={
+                                          'layout':
+                                          pio.templates["plotly_dark_custom"].layout
+                                      }))]
+            )),
+            html.Div(id="div-table"),
+            html.Article(
+                children=[
+                    html.Div(html.H2("Courbe de la VO2")),
+                    html.Div(
+                        children=dcc.Loading(dcc.Graph(
+                            id="vo2-chart",
+                            figure={
+                                'layout':
+                                pio.templates["plotly_dark_custom"].layout
+                            }
+                        )),
+                        className="card"
+                    )
 
-            ],
-            className="wrapper"
-        ),
-        dcc.Loading(html.Div(id="div-hr")),
+                ],
+                className="wrapper"
+            ),
+            dcc.Loading(html.Div(id="div-hr")),
+        ],
+            id="test-graphs-div"),
+
+        html.Button(html.B("Imprimer en PDF"), className="contrast outline",
+                    id="print-pdf", n_clicks=0),
 
         # dcc.Store stores the file data
         dcc.Loading(dcc.Store(id='data-upload', storage_type='session')),

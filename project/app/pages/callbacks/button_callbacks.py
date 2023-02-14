@@ -1,4 +1,4 @@
-from dash import Input, Output, State, callback
+from dash import Input, Output, State, callback, ClientsideFunction, clientside_callback
 from dash.exceptions import PreventUpdate
 
 
@@ -12,3 +12,13 @@ def get_button_callbacks(debug=True):
             return [False, ""]
         else:
             raise PreventUpdate
+
+    clientside_callback(
+        ClientsideFunction(
+            namespace='clientside',
+            function_name='printPdf'
+        ),
+        Output('print-pdf', 'disabled'),
+        Input('print-pdf', 'n_clicks'),
+        prevent_initial_call=True
+    )
