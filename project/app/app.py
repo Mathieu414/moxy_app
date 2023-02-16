@@ -29,8 +29,7 @@ def nav():
                 html.Li(
                     [html.A('Test',  href=dash.page_registry['pages.analyse_test']['path'], role="button")])
             ])
-        ]
-    )
+        ], className="no-print")
     return nav
 
 

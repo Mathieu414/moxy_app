@@ -51,7 +51,7 @@ layout = html.Div(
                         className="contrast outline", id="clear-button", n_clicks=0),
             dcc.Loading(dcc.Dropdown(
                 id="test-choice"))],
-            className="menu",
+            className="menu no-print",
         ),
         html.Article(children=[
             html.P(html.B(id="vo2_p")),
@@ -61,7 +61,7 @@ layout = html.Div(
                     children='Upload', id="vo2_button", disabled=True, className="secondary outline"),
                 multiple=False
             )],
-            className="menu",
+            className="menu no-print",
         ),
         html.Div(id="xml-div"),
 
@@ -101,6 +101,9 @@ layout = html.Div(
                 ],
                 className="wrapper"
             ),
+
+            html.Div(className="pagebreak"),
+
             html.Div(id="zoom-chart-div", children=html.Article(children=[
                 html.Div([html.H2("Courbe de la sélection")]),
                 dcc.Loading(dcc.Graph(id="test-zoom-chart",
