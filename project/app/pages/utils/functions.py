@@ -5,10 +5,6 @@ import base64
 import io
 from dash import html
 import re
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from fastdtw import fastdtw
-from scipy.spatial.distance import euclidean
 from scipy.signal import find_peaks
 from dtw import *
 
@@ -27,6 +23,18 @@ def df_find_peaks(df, prominence=8, width=20):
 
 
 def cut_peaks(df, range=20, prominence=8, width=20):
+    """Removes the data around the peaks detected by the find_peaks function
+
+    Args:
+        df (pandas Dataframe): Dataframe containing the data to cut
+        range (int, optional): length of data to remove around the peak detected. Defaults to 20.
+        prominence (int, optional): minimal peak heigth. Defaults to 8.
+        width (int, optional): minimal peak width. Defaults to 20.
+
+    Returns:
+        tuple : a list containing the dataframe with the data around the peaks removed (or not), and a string
+            with the corresponding success or error message
+    """
     print("--cut_peaks--")
     peaks = df_find_peaks(df["HR[bpm]"], prominence, width)
     if len(peaks) > 0:
@@ -80,6 +88,15 @@ def parse_data(content, filename):
 
 
 def synchronise_moxy_vo2(moxy_data, vo2_df):
+    """Uses the dtw library to synchronise the data from the moxy device and the data from the VO2 device
+
+    Args:
+        moxy_data (pandas Dataframe): moxy data
+        vo2_df (pandas Dataframe): vo2 data
+
+    Returns:
+        pandas Dataframe: moxy data with the synchronised vo2 data in it
+    """
     # remove the line with the units
     vo2_df = vo2_df.iloc[1:]
     # transform the time into seconds
@@ -107,7 +124,7 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
         path, columns=["VO2", "FC", "Time[s]"]).set_index("Time[s]")
     df = df[~df.index.duplicated(keep='first')]
     # merge the two dfs
-    moxy_data = moxy_data.merge(df, on='Time[s]')
+    moxy_data = moxy_data.merge(df, how='left', on='Time[s]')
     return moxy_data
 
 

@@ -1,6 +1,4 @@
 from dash import Input, Output, State, callback
-from dash.exceptions import PreventUpdate
-import pandas as pd
 
 
 def get_threshold_callbacks(debug=True):

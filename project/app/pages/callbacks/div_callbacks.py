@@ -1,4 +1,4 @@
-from dash import html, dcc, Input, Output, callback, State, dash_table
+from dash import html, dcc, Input, Output, callback, State
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.graph_objects as go
