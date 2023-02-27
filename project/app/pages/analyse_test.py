@@ -107,19 +107,28 @@ layout = html.Div(
                                       pio.templates["plotly_dark_custom"].layout
                                   })),
             html.Hr(),
+
             html.Div([
                 html.Div(html.P("Paramètres de detection des pauses:"),
                          className="col-sm-4"),
-                html.Div("", className="col-sm-7"),], className="row center"),
-
+            ], className="row"),
             html.Div([
                 html.Div(html.Label(["Hauteur", dcc.Input(id="prominence",
                                                              type="number"),]), className="col-sm-2"),
                 html.Div(html.Label(["Largeur", dcc.Input(id="width",
                                                           type="number")]), className="col-sm-2"),
-                html.Div("", className="col-sm-4"),
+            ], className="row"),
+            html.Div([
+                html.Div(html.P("Taille de la zone à enlever : "),
+                         className="col-sm-4"),
+            ], className="row"),
+            html.Div([
+                html.Label(["Largeur cachée", dcc.Input(
+                    id="removed_width", type="number")], className="col-sm-2"),
+                html.Div("", className="col-sm-7"),
                 html.Button(html.B("4.Filtrer les données"), className="contrast outline col-sm-3",
-                            id="filter-selection-button", n_clicks=0),], className="row"),
+                            id="filter-selection-button", n_clicks=0)
+            ], className="row"),
             html.Div(id='div-error-filter'),]
         )),
         html.Div(id="filter-data-div", children=html.Article(children=[

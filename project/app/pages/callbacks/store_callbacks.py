@@ -28,11 +28,12 @@ def get_store_callbacks(debug=True):
          State("seuils", "data"),
          State("prominence", "value"),
          State("width", "value"),
+         State("removed_width", "value"),
          State("peaks-parameters", "data")],
         prevent_initial_call=True,
     )
     def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, vo2_data,
-                    stored_data, stored_seuils, prominence, width, stored_peaks_param):
+                    stored_data, stored_seuils, prominence, width, removed_width, stored_peaks_param):
         """
         function to modify the data in the data-upload Store component.
 
@@ -87,10 +88,10 @@ def get_store_callbacks(debug=True):
             if stored_data:
                 stored_data.append([data[0], data[1]])
                 stored_seuils.append(new_seuils)
-                stored_peaks_param.append([8, 20])
+                stored_peaks_param.append([8, 20, 20])
                 return [stored_data, stored_seuils, stored_peaks_param]
             else:
-                return [[[data[0], data[1]]], [new_seuils], [[8, 20]]]
+                return [[[data[0], data[1]]], [new_seuils], [[8, 20, 20]]]
 
         if debug:
             print("valeur de seuil1")
@@ -179,6 +180,7 @@ def get_store_callbacks(debug=True):
                         data_selected = fc.synchronise_moxy_vo2(
                             data_selected, pd.read_json(vo2_df))
 
+                        # If there is already filtered data, then recompute it with the vo2 data
                         if len(stored_data[value]) >= 4:
                             list_data_filtered = fc.cut_peaks(
                                 data_selected, prominence=prominence, width=width)[0]
@@ -201,7 +203,7 @@ def get_store_callbacks(debug=True):
                         print("data selection is not empty")
                     data_selected = pd.read_json(stored_data[value][2])
                     list_data_filtered = fc.cut_peaks(
-                        data_selected, prominence=prominence, width=width)[0]
+                        data_selected, prominence=prominence, width=width, range=removed_width)[0]
 
                     for n in range(len(list_data_filtered)):
                         list_data_filtered[n] = list_data_filtered[n].to_json()
@@ -211,7 +213,8 @@ def get_store_callbacks(debug=True):
                     else:
                         stored_data[value].append(list_data_filtered)
 
-                    stored_peaks_param[value] = [prominence, width]
+                    stored_peaks_param[value] = [
+                        prominence, width, removed_width]
                     return [stored_data, no_update, stored_peaks_param]
                 else:
                     raise PreventUpdate

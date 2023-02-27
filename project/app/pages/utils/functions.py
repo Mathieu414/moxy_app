@@ -10,6 +10,7 @@ from plotly.subplots import make_subplots
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 from scipy.signal import find_peaks
+from dtw import *
 
 
 def df_find_peaks(df, prominence=8, width=20):
@@ -90,23 +91,21 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
     # tranform the hr into numeric values
     vo2_df["Fréquence cardiaque"] = pd.to_numeric(
         vo2_df["Fréquence cardiaque"], errors='coerce')
-    moxy_data["HR[bpm]"] = pd.to_numeric(
-        moxy_data["HR[bpm]"], errors='coerce')
     # dataframe to numpy
-    x = vo2_df[["Time[s]", "Fréquence cardiaque"]].to_numpy()
-    y = moxy_data[["Time[s]", "HR[bpm]"]].to_numpy()
-    # using the fastdtw function to match the datasets
-    distance, path = fastdtw(
-        x, y, dist=euclidean)
+    x = vo2_df["Fréquence cardiaque"].to_numpy()
+    y = moxy_data["HR[bpm]"].to_numpy()
+    # using the dtw library to match the datasets
+    alignment = warp(dtw(x, y), index_reference=True)
     # replace the index with the VO2 values
-    for i, (index_vo2, index_moxy) in enumerate(path):
-        path[i] = (float(vo2_df.loc[index_vo2+1]
-                         ["Consommation d'Oxygène"]), index_moxy)
+    path = []
+    for i, index_moxy in enumerate(alignment):
+        path.append([float(vo2_df.iloc[i]["Consommation d'Oxygène"]),
+                     x[i],
+                     moxy_data.iloc[index_moxy]["Time[s]"]])
     # set the index, and remove the duplicates
-    df = pd.DataFrame(path, columns=["VO2", "index"]).set_index(
-        "index")
+    df = pd.DataFrame(
+        path, columns=["VO2", "FC", "Time[s]"]).set_index("Time[s]")
     df = df[~df.index.duplicated(keep='first')]
-    df.index.names = ['Time[s]']
     # merge the two dfs
     moxy_data = moxy_data.merge(df, on='Time[s]')
     return moxy_data
