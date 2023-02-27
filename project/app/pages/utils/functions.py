@@ -113,6 +113,7 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
     y = moxy_data["HR[bpm]"].to_numpy()
     # using the dtw library to match the datasets
     alignment = warp(dtw(x, y), index_reference=True)
+    print(alignment)
     # replace the index with the VO2 values
     path = []
     for i, index_moxy in enumerate(alignment):
@@ -123,6 +124,7 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
     df = pd.DataFrame(
         path, columns=["VO2", "FC", "Time[s]"]).set_index("Time[s]")
     df = df[~df.index.duplicated(keep='first')]
+    df = df.iloc[1:]
     # merge the two dfs
     moxy_data = moxy_data.merge(df, how='left', on='Time[s]')
     return moxy_data

@@ -35,11 +35,11 @@ def create_figure(data):
 
     if "VO2" in data[0].columns:
         fig.add_trace(go.Scattergl(
-            x=data[0]["Time[s]"], y=(data[0]["VO2"]*10), name="VO2"), secondary_y=True)
+            x=data[0]["Time[s]"], y=(data[0]["VO2"]*10), name="VO2", mode='lines', connectgaps=True), secondary_y=True)
 
     if "FC" in data[0].columns:
         fig.add_trace(go.Scattergl(
-            x=data[0]["Time[s]"], y=(data[0]["FC"]), name="FC"), secondary_y=True)
+            x=data[0]["Time[s]"], y=(data[0]["FC"]), name="FC", mode='lines+markers', connectgaps=True), secondary_y=True)
 
     fig.update_traces(marker_size=1)
     fig.update_xaxes(showgrid=False, title="Temps")
