@@ -13,4 +13,5 @@ RUN pip install -r /requirements.txt
 # Copy app folder to app folder in container
 COPY /app /usr/src/app/
 
-CMD ["python3", "app.py"]
+# Run locally on port 8050
+CMD gunicorn --bind 0.0.0.0:$PORT app:server
