@@ -38,7 +38,7 @@ layout = html.Div(
         # menu
         html.Article(children=[
             html.P(html.B(
-                '1. Charger les fichiers DataAverage.xlsx et Details.txt')),
+                '1. Charger les fichiers DataAverage.xlsx/.csv et Details.txt')),
             dcc.Upload(
                 id='test-upload',
                 children=html.Button(
