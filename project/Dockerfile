@@ -13,4 +13,4 @@ RUN pip install -r /requirements.txt
 # Copy app folder to app folder in container
 COPY /app /usr/src/app/
 
-CMD ["python3", "project/app/app.py"]
+CMD ["python3", "app.py"]
