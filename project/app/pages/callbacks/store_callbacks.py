@@ -53,9 +53,12 @@ def get_store_callbacks(debug=True):
         if debug:
             print("--data-upload--")
 
-        if (ctx.triggered_id == "test-upload") and ('Details.txt' in filenames) and ('DataAverage.xlsx' in filenames):
+        if (ctx.triggered_id == "test-upload") and ('Details.txt' in filenames) and (('DataAverage.xlsx' in filenames) or ('DataAverage.csv' in filenames)):
             t_id = filenames.index('Details.txt')
-            x_id = filenames.index('DataAverage.xlsx')
+            if ('DataAverage.xlsx' in filenames):
+                x_id = filenames.index('DataAverage.xlsx')
+            if ('DataAverage.csv' in filenames):
+                x_id = filenames.index('DataAverage.csv')
             data = []
             for content, filename in zip(contents, filenames):
                 data.append(fc.parse_data(content, filename))
