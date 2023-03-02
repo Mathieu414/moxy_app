@@ -70,6 +70,8 @@ def parse_data(content, filename):
         if "xlsx" in filename:
             # Assume that the user uploaded an excel file
             return pd.read_excel(io.BytesIO(decoded))
+        if "csv" in filename:
+            return pd.read_csv(io.BytesIO(decoded))
 
         elif "Details.txt" in filename:
             # find the muscle groups in the file
