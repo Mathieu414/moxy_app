@@ -9,8 +9,8 @@ def get_figure_callbacks(debug=True):
     @ callback(
         Output('test-chart', 'figure'),
         Input('test-choice', 'value'),
-        Input("seuils", "data"),
-        State('data-upload', 'data'),
+        [Input("seuils", "data"),
+         Input('data-upload', 'data')],
         prevent_initial_call=True
     )
     def update_graph(value, seuils, data):

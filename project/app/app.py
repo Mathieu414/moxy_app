@@ -13,7 +13,8 @@ def index_redirect():
 app = dash.Dash(
     __name__,
     server=server,
-    use_pages=True
+    use_pages=True,
+    suppress_callback_exceptions=True
 )
 
 
