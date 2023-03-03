@@ -8,7 +8,18 @@ def get_button_callbacks(debug=True):
               Input("test-choice", 'value')
               )
     def set_button_enabled_state(value):
+        print(value)
         if value is not None:
             return [False, ""]
         else:
-            raise PreventUpdate
+            return [True, "secondary outline"]
+
+    @callback([Output('modal_open', 'disabled'),
+              Output('modal_open', 'className')],
+              Input("test-choice", 'value')
+              )
+    def set_button_enabled_state(value):
+        if value is not None:
+            return [False, ""]
+        else:
+            return [True, "secondary outline"]
