@@ -9,8 +9,8 @@ def get_figure_callbacks(debug=True):
     @ callback(
         Output('test-chart', 'figure'),
         Input('test-choice', 'value'),
-        Input("seuils", "data"),
-        State('data-upload', 'data'),
+        [Input("seuils", "data"),
+         Input('data-upload', 'data')],
         prevent_initial_call=True
     )
     def update_graph(value, seuils, data):
@@ -22,7 +22,7 @@ def get_figure_callbacks(debug=True):
             print("value is not None")
             data = data[value]
             data[0] = pd.read_json(data[0])
-            fig = figures.create_figure([data[0], data[1]])
+            fig = figures.create_figure([data[0], data[1][0]])
             print("create figure :")
             return fig
         if (value == 0) and (data is None):
@@ -37,6 +37,8 @@ def get_figure_callbacks(debug=True):
         Input('data-upload', 'data')
     )
     def display_zoomed_data(value, data):
+        if debug:
+            print("--display_zoomed_data--")
         fig = {'layout': pio.templates["plotly_dark_custom"].layout}
         if (value is not None) and (data is not None):
             if len(data[value]) >= 3:
@@ -44,7 +46,7 @@ def get_figure_callbacks(debug=True):
                     print("create zoomed figure")
                 data[value][2] = pd.read_json(data[value][2])
                 fig = figures.create_figure(
-                    [data[value][2], data[value][1]])
+                    [data[value][2], data[value][1][0]])
         return fig
 
     @ callback(

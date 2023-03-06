@@ -9,6 +9,7 @@ from pages.callbacks.inputs_callbacks import get_threshold_callbacks
 from pages.callbacks.div_callbacks import get_div_callbacks
 from pages.callbacks.p_callbacks import get_p_callbacks
 from pages.callbacks.button_callbacks import get_button_callbacks
+from pages.callbacks.modal_callbacks import get_modal_callbacks
 
 dash.register_page(__name__)
 
@@ -39,19 +40,34 @@ layout = html.Div(
         # menu
         html.Article(children=[
             html.P(html.B(
-                '1. Charger les fichiers DataAverage.xlsx et Details.txt')),
+                '1. Charger le fichier DataAverage.xlsx/.csv')),
             dcc.Upload(
                 id='test-upload',
                 children=html.Button(
-                    'Upload'),
-                # Allow multiple files to be uploaded
-                multiple=True
+                    'Upload')
             ),
             html.Button("Effacer les données ",
                         className="contrast outline", id="clear-button", n_clicks=0),
             dcc.Loading(dcc.Dropdown(
                 id="test-choice"))],
             className="menu no-print",
+        ),
+        html.Article(children=[
+            html.P(html.B("2.Définir les groupes musculaires")),
+            html.Button(children='Définir', id="modal_open",
+                        disabled=True, className="secondary outline"),
+            html.Dialog(
+                [
+                    html.Article([html.H3("Définir les groupes musulaires"),
+                                  html.Div(id="modal_content"),
+                                  html.Footer(
+                        html.Button("Confirmer", id="modal_close")
+                    ),])
+                ],
+                id="modal",
+                open=False
+            ),],
+            className="menu",
         ),
         html.Article(children=[
             html.P(html.B(id="vo2_p")),
@@ -73,7 +89,7 @@ layout = html.Div(
                         html.Div(html.H2("Courbe des groupes musculaires"),
                              className="col-8"),
                     ], className="row"),
-                    html.P(html.B("3. Selectionnez la zone du test")),
+                    html.P(html.B("4. Selectionnez la zone du test")),
                     html.Div(id="inputs-threshold",
                              children=[
                                  html.Div([
@@ -115,16 +131,24 @@ layout = html.Div(
                 html.Div([
                     html.Div(html.P("Paramètres de detection des pauses:"),
                          className="col-sm-4"),
-                    html.Div("", className="col-sm-7"),], className="row center"),
-
+                ], className="row"),
                 html.Div([
                     html.Div(html.Label(["Hauteur", dcc.Input(id="prominence",
                                                               type="number"),]), className="col-sm-2"),
                     html.Div(html.Label(["Largeur", dcc.Input(id="width",
                                                               type="number")]), className="col-sm-2"),
-                    html.Div("", className="col-sm-4"),
-                    html.Button(html.B("4.Filtrer les données"), className="contrast outline col-sm-3",
-                                id="filter-selection-button", n_clicks=0),], className="row"),
+                ], className="row"),
+                html.Div([
+                    html.Div(html.P("Taille de la zone à enlever : "),
+                         className="col-sm-4"),
+                ], className="row"),
+                html.Div([
+                    html.Label(["Largeur cachée", dcc.Input(
+                        id="removed_width", type="number")], className="col-sm-2"),
+                    html.Div("", className="col-sm-7"),
+                    html.Button(html.B("5.Filtrer les données"), className="contrast outline col-sm-3",
+                                id="filter-selection-button", n_clicks=0)
+                ], className="row"),
                 html.Div(id='div-error-filter'),]
             )),
             html.Div(id="filter-data-div", children=html.Article(children=[
@@ -177,3 +201,4 @@ get_threshold_callbacks(d)
 get_div_callbacks(d)
 get_p_callbacks(d)
 get_button_callbacks(d)
+get_modal_callbacks(d)

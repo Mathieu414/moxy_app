@@ -14,6 +14,6 @@ def get_p_callbacks(debug=True):
             print("--update_p--")
         if value is not None and data is not None:
             print
-            return ["2. Importer les données VO2 du test du " + str(data[value][1][2]) + " à " + str(data[value][1][1]), ""]
+            return ["3. Importer les données VO2 du test", ""]
         else:
-            return ["Choisir un test avant de charger le fichier VO2", "error"]
+            return ["3.Choisir un test avant de charger le fichier VO2", "error"]

@@ -1,6 +1,4 @@
 from dash import Input, Output, State, callback
-from dash.exceptions import PreventUpdate
-import pandas as pd
 
 
 def get_threshold_callbacks(debug=True):
@@ -35,7 +33,8 @@ def get_threshold_callbacks(debug=True):
             return [True, True, None, None]
 
     @callback([Output('prominence', 'value'),
-               Output('width', 'value')],
+               Output('width', 'value'),
+               Output('removed_width', 'value')],
               Input('test-choice', 'value'),
               State('peaks-parameters', 'data')
               )
@@ -47,4 +46,4 @@ def get_threshold_callbacks(debug=True):
         if (data is not None) and (value is not None):
             return data[value]
         else:
-            return [None, None]
+            return [None, None, None]
