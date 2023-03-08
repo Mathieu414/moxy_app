@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 import statsmodels.api as sm
 import pages.utils.functions as fc
 import datetime
+import darkdetect
+import plotly.io as pio
 
 
 def get_div_callbacks(debug=True):
@@ -14,6 +16,11 @@ def get_div_callbacks(debug=True):
         Input('data-upload', 'data')
     )
     def add_hr_graphs(value, data):
+        pio.templates["plotly_white"]['data']['histogram2dcontour'][0]['colorscale'] = (
+            [0, 'white'], [1, '#636efa '])
+        pio.templates["plotly_dark_custom"]['data']['histogram2dcontour'][0]['colorscale'] = (
+            [0, '#141e26'], [1, '#636efa '])
+
         if (value is not None) and (data is not None):
             if len(data[value]) >= 4:
                 for n in range(len(data[value][3])):
@@ -21,7 +28,8 @@ def get_div_callbacks(debug=True):
                 data_filtered = pd.concat(data[value][3])
                 if "HR[bpm]" in data_filtered.columns:
                     children = [
-                        html.H2("Desoxygénation musculaire en fonction du HR")]
+                        html.H2("Desoxygénation musculaire en fonction du HR", className="center")]
+                    graphs = []
                     for n in data[value][1][0]:
                         fig = go.Figure()
                         fig.add_trace(go.Scatter(x=data_filtered["HR[bpm]"],
@@ -31,8 +39,6 @@ def get_div_callbacks(debug=True):
 
                         fig.add_trace(go.Histogram2dContour(x=data_filtered["HR[bpm]"],
                                                             y=data_filtered[n],
-                                                            colorscale=[
-                                                                [0, '#141e26'], [1, '#636efa ']],
                                                             showscale=False,
                                                             contours_showlines=False))
                         trendline = sm.nonparametric.lowess(data_filtered[n],
@@ -45,16 +51,12 @@ def get_div_callbacks(debug=True):
                                                  line_color='#ab63fa',
                                                  name="Tendance",
                                                  line_shape='spline'))
-                        children.extend([html.H4(n),
-                                        html.Div(
-                            children=dcc.Graph(
-                                        id="hr-" + n,
-                                        figure=fig
-                                        ),
-                            className="card"
-                        )]
-
-                        )
+                        fig.update_layout(showlegend=False)
+                        graphs.append(html.Div([html.H4(n, className="center"), dcc.Graph(
+                            id="hr-" + n,
+                            figure=fig)]))
+                    children.append(
+                        html.Div(children=graphs, className="grid-display"))
                     content = html.Article(children=children,
                                            className="wrapper"
                                            )
@@ -123,7 +125,6 @@ def get_div_callbacks(debug=True):
                 lines2.append([html.Td(m)])
 
             # fill with the threshold data
-            print(data)
             if len(data[1]) > 0:
                 for i, seuil in enumerate(data[1]):
                     if len(seuil) > 0:
@@ -156,7 +157,7 @@ def get_div_callbacks(debug=True):
                 for i in range(len(lines2)):
                     body2.append(html.Tr(lines2[i]))
 
-            content2 = [html.H2("Valeurs de référence"),
+            content2 = [html.H2("Valeurs de référence", className="center"),
                         html.Table(
                 [html.Thead(children=head),
                  html.Tbody(
@@ -165,7 +166,8 @@ def get_div_callbacks(debug=True):
             ]
             if len(data[2]) > 0:
                 content2.extend([
-                    html.H3("Temps dans les zones musculaires"),
+                    html.H3("Temps dans les zones musculaires",
+                            className="center"),
                     html.Table(
                         [html.Thead(children=head2),
                          html.Tbody(

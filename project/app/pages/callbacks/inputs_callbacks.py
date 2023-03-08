@@ -3,7 +3,9 @@ from dash import Input, Output, State, callback
 
 def get_threshold_callbacks(debug=True):
     @ callback(
-        [Output('seuil1', 'disabled'),
+        [Output('seuil1-p', 'value'),
+         Output('seuil2-p', 'value'),
+         Output('seuil1', 'disabled'),
          Output('seuil2', 'disabled'),
          Output('seuil1', 'value'),
          Output('seuil2', 'value')],
@@ -22,15 +24,15 @@ def get_threshold_callbacks(debug=True):
                     print("threshold enabled")
                 value_seuil1 = seuils[0]
                 value_seuil2 = seuils[1]
-                return [False, False, value_seuil1, value_seuil2]
+                return [value_seuil1, value_seuil2, False, False, value_seuil1, value_seuil2]
             else:
                 if debug:
                     print("seuils are both None")
-                return [True, True, None, None]
+                return [None, None, True, True, None, None]
         else:
             if debug:
                 print("seuils or value is None")
-            return [True, True, None, None]
+            return [None, None, True, True, None, None]
 
     @callback([Output('prominence', 'value'),
                Output('width', 'value'),

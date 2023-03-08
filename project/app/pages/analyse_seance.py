@@ -10,15 +10,21 @@ import plotly.express as px
 import plotly.io as pio
 import plotly.graph_objects as go
 import scipy
+import darkdetect
 
 from scipy import signal
 
 dash.register_page(__name__,)
 
-pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
-pio.templates["plotly_dark_custom"]['layout']['paper_bgcolor'] = '#141e26'
-pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
-pio.templates.default = "plotly_dark_custom"
+if darkdetect.isDark():
+    pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
+    pio.templates["plotly_dark_custom"]['layout']['paper_bgcolor'] = '#141e26'
+    pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
+    pio.templates["plotly_dark_custom"]['layout']['dragmode'] = 'select'
+    pio.templates.default = "plotly_dark_custom"
+else:
+    pio.templates.default = "plotly_white"
+
 
 layout = html.Div(
     children=[
@@ -55,10 +61,7 @@ layout = html.Div(
                 html.Div(
                     children=dcc.Graph(
                         id="moxy-chart",
-                        figure={
-                            'layout':
-                                pio.templates["plotly_dark_custom"].layout
-                        }
+                        figure=go.Figure()
                     ),
                     className="card"
                 )
@@ -73,10 +76,7 @@ layout = html.Div(
                         html.H1("Visualisation de la sélection"),
                         dcc.Graph(
                             id="zoom-chart",
-                            figure={
-                                'layout':
-                                pio.templates["plotly_dark_custom"].layout
-                            }
+                            figure=go.Figure()
                         )]
                 )
 

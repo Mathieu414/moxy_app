@@ -8,7 +8,7 @@
     .container {
         max-width: 1650px;
     }
-    }
+}
 
 .center {
     text-align: center;
@@ -53,14 +53,48 @@
     color: green;
 }
 
+.print{
+    display: none;
+}
+
+.grid-display{
+    display: grid;
+    grid-template-columns: 50% 50%;
+}
+
 @media print
-{    
+{
+    .container{
+        max-width: none;
+        padding-right: 1em;
+        padding-left: 1em;
+    }
+    :root {
+        --block-spacing-vertical: calc(var(--spacing) / 2) !important;
+        --block-spacing-horizontal: calc(var(--spacing) / 2) !important;
+    }
+
     button, .no-print, .no-print *
     {
         display: none !important;
     }
 
-    @media print {
-        .pagebreak { page-break-before: always; } /* page-break-after works, as well */
+    .pagebreak { page-break-before: always; }
+
+    .print{
+        display: block;
     }
+
+    .inline{
+        display: flex;
+        justify-content: space-around;
+    }
+
+    @page { size: auto;  margin: 5mm 10mm 5mm 10mm; }
+
+
+}
+
+.hide{
+    display: none;
 }
