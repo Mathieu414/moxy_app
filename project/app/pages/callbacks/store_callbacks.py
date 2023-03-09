@@ -5,6 +5,8 @@ import numpy as np
 from scipy import signal
 import pages.utils.functions as fc
 import pages.utils.read_xml as read_xml
+import plotly.io as pio
+import darkdetect
 
 import base64
 import io
@@ -26,7 +28,9 @@ def get_store_callbacks(debug=True):
          Input("filter-selection-button", "n_clicks"),
          Input("vo2-data", "data"),
          Input("modal_close", "n_clicks"),
-         Input({'type': 'muscle-input', 'index': ALL}, 'value')],
+         Input({'type': 'muscle-input', 'index': ALL}, 'value'),
+         Input('print-pdf', 'n_clicks'),
+         Input('re-render', 'n_clicks'),],
 
         [State("data-upload", 'data'),
          State("seuils", "data"),
@@ -36,7 +40,7 @@ def get_store_callbacks(debug=True):
          State("peaks-parameters", "data")],
         prevent_initial_call=True,
     )
-    def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, vo2_data, modal_button, modal_values,
+    def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, vo2_data, modal_button, modal_values, pdf_button, re_render,
                     stored_data, stored_seuils, prominence, width, removed_width, stored_peaks_param):
         """
         function to modify the data in the data-upload Store component.
@@ -54,6 +58,8 @@ def get_store_callbacks(debug=True):
                 in [1], seuils.data : list containing a list of thresholds for each test
                 in [2], detection-threshold.data : list containing the prominence and width for each tests
         """
+        pio.templates.default = "plotly_dark_custom"
+
         if debug:
             print("--data-upload--")
 
@@ -86,11 +92,8 @@ def get_store_callbacks(debug=True):
                 return [[[data[0], data[1]]], [new_seuils], [[8, 20, 20]]]
 
         if (ctx.triggered_id == "modal_close"):
-            print(modal_values)
-            print(stored_data[value][0])
             # change the column names of the base data
             col_names = dict(zip(stored_data[value][1][0], modal_values))
-            print(col_names)
             stored_data[value][0] = pd.read_json(
                 stored_data[value][0])
             stored_data[value][0].rename(columns=col_names, inplace=True)
@@ -246,6 +249,11 @@ def get_store_callbacks(debug=True):
             else:
                 raise PreventUpdate
 
+        if (ctx.triggered_id == "print-pdf") and (value is not None):
+            print("print pdf")
+            pio.templates.default = "plotly_white"
+            return [stored_data, no_update, no_update]
+
         else:
             if debug:
                 print("prevent update data_upload")
@@ -262,7 +270,7 @@ def get_store_callbacks(debug=True):
     def compute_muscular_thresholds(fig, stored_data, value, seuils):
         if debug:
             print("--compute_muscular_thresholds--")
-        if "data" in fig.keys():
+        if "data" in fig.keys() and fig["data"]:
             analytics = [[], [], []]
             df_filtered = stored_data[value][3]
             for n in range(len(df_filtered)):
@@ -321,7 +329,6 @@ def get_store_callbacks(debug=True):
                             for m in stored_data[value][1][0]:
                                 threshold_muscul[1].append(
                                     target_muscul[m].mean())
-                print(threshold_muscul)
                 analytics[1] = threshold_muscul
 
             # find min and max for each muscular groups
@@ -329,14 +336,12 @@ def get_store_callbacks(debug=True):
             min_max = []
             for m in stored_data[value][1][0]:
                 min_max.append(df_filtered_concat[m].min())
-            print(min_max)
             analytics[0] = min_max
 
             # compute the time spent in the zones
             analytics[2] = fc.get_time_zones(
                 [df_filtered_concat, stored_data[value][1][0]], analytics[1])
 
-            print(analytics)
             return analytics
         else:
             return None

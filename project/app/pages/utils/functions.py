@@ -139,10 +139,7 @@ def get_time_zones(data, seuils_muscu):
         time_z2 = []
         time_z3 = []
         for i, m in enumerate(data[1]):
-            print("Seuils Musculaires : ", seuils_muscu)
             if len(seuils_muscu[0]) > 0:
-                print(i)
-                print(data[0][m][data[0][m] < seuils_muscu[0][i]])
                 time_z1.append(
                     len(data[0][m][data[0][m] > seuils_muscu[0][i]].index.tolist()))
             if len(seuils_muscu[1]) > 0:
@@ -150,9 +147,6 @@ def get_time_zones(data, seuils_muscu):
                     data[0][m] > seuils_muscu[1][i])].index.tolist()))
                 time_z3.append(
                     len(data[0][m][data[0][m] < seuils_muscu[1][i]].index.tolist()))
-        print(time_z1)
-        print(time_z2)
-        print(time_z3)
         return ([time_z1, time_z2, time_z3])
     else:
         return []

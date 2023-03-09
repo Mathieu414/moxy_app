@@ -1,6 +1,8 @@
 from flask import Flask, redirect
 import dash
 from dash import html
+import darkdetect
+import plotly.io as pio
 
 server = Flask(__name__)
 
@@ -8,6 +10,19 @@ server = Flask(__name__)
 @server.route('/')
 def index_redirect():
     return redirect('/analyse-test')
+
+
+pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
+pio.templates["plotly_dark_custom"]['layout']['paper_bgcolor'] = '#141e26'
+pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
+pio.templates["plotly_dark_custom"]['layout']['dragmode'] = 'select'
+
+if darkdetect.isDark():
+    pio.templates.default = "plotly_dark_custom"
+else:
+    pio.templates.default = "plotly_white"
+
+print()
 
 
 app = dash.Dash(
@@ -30,12 +45,12 @@ def nav():
                 html.Li(
                     [html.A('Test',  href=dash.page_registry['pages.analyse_test']['path'], role="button")])
             ])
-        ]
-    )
+        ], className="no-print")
     return nav
 
 
-app.layout = html.Main([nav(), dash.page_container], className="container")
+app.layout = html.Main([nav(), dash.page_container],
+                       className="container", id="container")
 
 
 server = app.server

@@ -3,6 +3,7 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.io as pio
 import pages.utils.figures as figures
+import plotly.graph_objects as go
 
 
 def get_figure_callbacks(debug=True):
@@ -27,7 +28,8 @@ def get_figure_callbacks(debug=True):
             return fig
         if (value == 0) and (data is None):
             print("value is None")
-            return {'layout': pio.templates["plotly_dark_custom"].layout}
+            return fig()
+        # {'layout': pio.templates["plotly_dark_custom"].layout}
         else:
             raise PreventUpdate
 
@@ -39,7 +41,8 @@ def get_figure_callbacks(debug=True):
     def display_zoomed_data(value, data):
         if debug:
             print("--display_zoomed_data--")
-        fig = {'layout': pio.templates["plotly_dark_custom"].layout}
+        fig = go.Figure()
+        # fig = {'layout': pio.templates["plotly_dark_custom"].layout}
         if (value is not None) and (data is not None):
             if len(data[value]) >= 3:
                 if debug:
@@ -55,7 +58,8 @@ def get_figure_callbacks(debug=True):
         Input('data-upload', 'data')
     )
     def display_filtered_data(value, data):
-        fig = {'layout': pio.templates["plotly_dark_custom"].layout}
+        fig = go.Figure()
+        # fig = {'layout': pio.templates["plotly_dark_custom"].layout}
         if (value is not None) and (data is not None):
             if len(data[value]) >= 4:
                 if debug:
@@ -73,7 +77,8 @@ def get_figure_callbacks(debug=True):
     )
     def display_vo2_data(value, data):
         print("--update_vo2_graph--")
-        fig = {'layout': pio.templates["plotly_dark_custom"].layout}
+        fig = go.Figure()
+        # fig = {'layout': pio.templates["plotly_dark_custom"].layout}
         if (value is not None) and (data is not None):
             data = data[value]
             print("Longeur des données", len(data))
