@@ -204,7 +204,8 @@ layout = html.Div(
                     id="re-render", n_clicks=0),
 
         # dcc.Store stores the file data
-        dcc.Loading(dcc.Store(id='data-upload', storage_type='session')),
+        dcc.Loading(dcc.Store(id='data-upload',
+                    storage_type='session'), fullscreen=True, style={"backgroundColor": "transparent"}, id="loading"),
         dcc.Store(id='seuils', storage_type='session'),
         dcc.Store(id='data-selection', storage_type='session'),
         dcc.Store(id='data-filtered', storage_type='session'),
