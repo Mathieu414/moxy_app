@@ -159,9 +159,11 @@ layout = html.Div(
                          className="col-sm-4"),
                 ], className="row no-print"),
                 html.Div([
-                    html.Label(["Largeur cachée", dcc.Input(
-                        id="removed_width", type="number")], className="col-sm-2"),
-                    html.Div("", className="col-sm-7"),
+                    html.Label(["Retirer à gauche", dcc.Input(
+                        id="removed_width_left", type="number")], className="col-sm-2"),
+                    html.Label(["Retirer à droite", dcc.Input(
+                        id="removed_width_right", type="number")], className="col-sm-2"),
+                    html.Div("", className="col-sm-5"),
                     html.Button(html.B("5.Filtrer les données"), className="contrast outline col-sm-3",
                                 id="filter-selection-button", n_clicks=0)
                 ], className="row no-print"),
