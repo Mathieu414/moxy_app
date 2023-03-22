@@ -17,10 +17,7 @@ pio.templates["plotly_dark_custom"]['layout']['paper_bgcolor'] = '#141e26'
 pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
 pio.templates["plotly_dark_custom"]['layout']['dragmode'] = 'select'
 
-if darkdetect.isDark():
-    pio.templates.default = "plotly_dark_custom"
-else:
-    pio.templates.default = "plotly_white"
+pio.templates.default = "plotly_dark_custom"
 
 print()
 

@@ -16,6 +16,7 @@ def get_div_callbacks(debug=True):
         Input('data-upload', 'data')
     )
     def add_hr_graphs(value, data):
+        # For the printing style
         pio.templates["plotly_white"]['data']['histogram2dcontour'][0]['colorscale'] = (
             [0, 'white'], [1, '#636efa '])
         pio.templates["plotly_dark_custom"]['data']['histogram2dcontour'][0]['colorscale'] = (

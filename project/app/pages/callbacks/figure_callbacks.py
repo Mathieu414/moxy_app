@@ -11,8 +11,7 @@ def get_figure_callbacks(debug=True):
         Output('test-chart', 'figure'),
         Input('test-choice', 'value'),
         [Input("seuils", "data"),
-         Input('data-upload', 'data')],
-        prevent_initial_call=True
+         Input('data-upload', 'data')]
     )
     def update_graph(value, seuils, data):
         if debug:

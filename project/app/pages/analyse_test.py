@@ -2,7 +2,6 @@ import dash
 from dash import html, dcc
 import plotly.io as pio
 import plotly.graph_objects as go
-import darkdetect
 
 from pages.callbacks.store_callbacks import get_store_callbacks
 from pages.callbacks.figure_callbacks import get_figure_callbacks
@@ -15,14 +14,12 @@ from pages.callbacks.modal_callbacks import get_modal_callbacks
 
 dash.register_page(__name__)
 
-if darkdetect.isDark():
-    pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
-    pio.templates["plotly_dark_custom"]['layout']['paper_bgcolor'] = '#141e26'
-    pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
-    pio.templates["plotly_dark_custom"]['layout']['dragmode'] = 'select'
-    pio.templates.default = "plotly_dark_custom"
-else:
-    pio.templates.default = "plotly_white"
+
+pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
+pio.templates["plotly_dark_custom"]['layout']['paper_bgcolor'] = '#141e26'
+pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
+pio.templates["plotly_dark_custom"]['layout']['dragmode'] = 'select'
+pio.templates.default = "plotly_dark_custom"
 
 d = True
 
