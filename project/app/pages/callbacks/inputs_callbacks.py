@@ -36,7 +36,8 @@ def get_threshold_callbacks(debug=True):
 
     @callback([Output('prominence', 'value'),
                Output('width', 'value'),
-               Output('removed_width', 'value')],
+               Output('removed_width_left', 'value'),
+               Output('removed_width_right', 'value')],
               Input('test-choice', 'value'),
               State('peaks-parameters', 'data')
               )
@@ -48,4 +49,4 @@ def get_threshold_callbacks(debug=True):
         if (data is not None) and (value is not None):
             return data[value]
         else:
-            return [None, None, None]
+            return [None, None, None, None]

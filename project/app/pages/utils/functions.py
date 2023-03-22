@@ -22,7 +22,7 @@ def df_find_peaks(df, prominence=8, width=20):
     return find_peaks(- df.to_numpy(), prominence=prominence, width=width)[0]
 
 
-def cut_peaks(df, range=20, prominence=8, width=20):
+def cut_peaks(df, range_right=20, range_left=20, prominence=8, width=20):
     """Removes the data around the peaks detected by the find_peaks function
 
     Args:
@@ -39,15 +39,17 @@ def cut_peaks(df, range=20, prominence=8, width=20):
     peaks = df_find_peaks(df["HR[bpm]"], prominence, width)
     if len(peaks) > 0:
         list_levels = []
-        if peaks[0]-range >= df.iloc[0].name:
-            df.iloc[peaks[0]-range:peaks[0]+range] = np.nan
-            list_levels.append(df.iloc[:peaks[0]+range])
+        # check for index problems at the begining
+        if peaks[0]-range_left >= df.iloc[0].name:
+            df.iloc[peaks[0]-range_left:peaks[0]+range_right] = np.nan
+            list_levels.append(df.iloc[:peaks[0]+range_right])
         if len(peaks) >= 1:
             for i, v in enumerate(peaks[1:]):
-                df.iloc[v-range:v+range] = np.nan
-                list_levels.append(df.iloc[peaks[i]+range:v+range])
-        if peaks[-1]+range <= df.iloc[-1].name:
-            list_levels.append(df.iloc[peaks[-1]+range:])
+                df.iloc[v-range_left:v+range_right] = np.nan
+                list_levels.append(df.iloc[peaks[i]+range_right:v+range_right])
+        # check for index problems at the end
+        if peaks[-1]+range_right <= df.iloc[-1].name:
+            list_levels.append(df.iloc[peaks[-1]+range_right:])
         return (list_levels, str(len(list_levels)) + " paliers détectés")
     else:
         return ([df], "Erreur : pas de pauses détectées")
@@ -133,6 +135,15 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
 
 
 def get_time_zones(data, seuils_muscu):
+    """get the time spent in the difference muscular zones
+
+    Args:
+        data (list): list containing the data : in [0] a dataframe with the data, in [1] the muscle groups
+        seuils_muscu (list): list containing the different thresholds for the muscles
+
+    Returns:
+        list: list with zone times
+    """
     print("--get-time-zones--")
     if len(seuils_muscu) > 0:
         time_z1 = []
