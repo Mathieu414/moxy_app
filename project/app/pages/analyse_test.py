@@ -113,8 +113,7 @@ layout = html.Div(
                              className='grid'),
                     dcc.Loading(html.Div(
                         children=dcc.Graph(
-                            id="test-chart",
-                            figure=go.Figure()
+                            id="test-chart"
                         ),
                         className="card"
                     ))
