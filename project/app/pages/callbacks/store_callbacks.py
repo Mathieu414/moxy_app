@@ -81,7 +81,7 @@ def get_store_callbacks(debug=True):
             if "HR[bpm]" in data[0].columns:
                 data[0]["HR[bpm]"] = signal.savgol_filter(
                     data[0]["HR[bpm]"], 40, 4)
-                new_seuils = [0, 0]
+                new_seuils = [None, None]
 
             data[0] = data[0].to_json()
             if stored_data:
@@ -147,15 +147,29 @@ def get_store_callbacks(debug=True):
                 if df_filtered is not None:
                     for n in range(len(df_filtered)):
                         df_filtered[n]["Seuil 1"] = seuil1
+            else:
+                if "Seuil 1" in df.columns:
+                    df = df.drop(columns="Seuil 1")
+                if (df_selected is not None) and ("Seuil 1" in df_selected.columns):
+                    df_selected = df_selected.drop("Seuil 1")
+                if (df_filtered is not None) and ("Seuil 1" in df_filtered[0].columns):
+                    for n in range(len(df_filtered)):
+                        df_filtered[n] = df_filtered[n].drop("Seuil 1")
             if (seuil2 is not None) and (seuil2 != 0):
-                if debug:
-                    print("seuil2 is not None and not 0")
                 df["Seuil 2"] = seuil2
                 if df_selected is not None:
                     df_selected["Seuil 2"] = seuil2
                 if df_filtered is not None:
                     for n in range(len(df_filtered)):
                         df_filtered[n]["Seuil 2"] = seuil2
+            else:
+                if "Seuil 2" in df.columns:
+                    df = df.drop(columns="Seuil 2")
+                if (df_selected is not None) and ("Seuil 2" in df_selected.columns):
+                    df_selected = df_selected.drop(columns="Seuil 2")
+                if (df_filtered is not None) and ("Seuil 2" in df_filtered[0].columns):
+                    for n in range(len(df_filtered)):
+                        df_filtered[n] = df_filtered[n].drop(columns="Seuil 2")
             df = df.to_json()
             stored_data[value][0] = df
             if df_selected is not None:
@@ -277,11 +291,11 @@ def get_store_callbacks(debug=True):
             for n in range(len(df_filtered)):
                 df_filtered[n] = pd.read_json(df_filtered[n])
             # check if there is any thresholds in store
-            if seuils[value] != [0, 0]:
+            if seuils[value] != [0, 0] or seuils[value] != [None, None]:
                 print("seuils are not None")
                 threshold_muscul = [[], []]
                 df_filtered = stored_data[value][3]
-                if seuils[value][0] > 0:
+                if (seuils[value][1] is not None) and (seuils[value][1] != 0):
                     if debug:
                         print("compute the first threshod")
                     # iterate over the levels of the test
@@ -306,7 +320,7 @@ def get_store_callbacks(debug=True):
                                 threshold_muscul[0].append(
                                     target_muscul[m].mean())
 
-                if seuils[value][1] > 0:
+                if (seuils[value][1] is not None) and (seuils[value][1] != 0):
                     if debug:
                         print("compute the second threshod")
                     # iterate over the levels of the test

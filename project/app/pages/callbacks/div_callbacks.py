@@ -13,9 +13,10 @@ def get_div_callbacks(debug=True):
     @callback(
         Output('div-hr', 'children'),
         Input('test-choice', 'value'),
-        Input('data-upload', 'data')
+        Input('data-upload', 'data'),
+        State("seuils", "data")
     )
-    def add_hr_graphs(value, data):
+    def add_hr_graphs(value, data, seuils):
         pio.templates["plotly_white"]['data']['histogram2dcontour'][0]['colorscale'] = (
             [0, 'white'], [1, '#636efa '])
         pio.templates["plotly_dark_custom"]['data']['histogram2dcontour'][0]['colorscale'] = (
@@ -51,6 +52,13 @@ def get_div_callbacks(debug=True):
                                                  line_color='#ab63fa',
                                                  name="Tendance",
                                                  line_shape='spline'))
+                        if "Seuil 1" in data_filtered.columns:
+                            fig.add_vline(x=data_filtered["Seuil 1"][0], line_width=3, line_dash="dash",
+                                          line_color="green", name="Seuil 1")
+                        if "Seuil 2" in data_filtered.columns:
+                            fig.add_vline(x=data_filtered["Seuil 2"][0], line_width=3, line_dash="dash",
+                                          line_color="yellow", name="Seuil 2")
+
                         fig.update_layout(showlegend=False)
                         graphs.append(html.Div([html.H4(n, className="center"), dcc.Graph(
                             id="hr-" + n,
