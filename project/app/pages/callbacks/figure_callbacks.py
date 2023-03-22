@@ -28,10 +28,10 @@ def get_figure_callbacks(debug=True):
             return fig
         if (value == 0) and (data is None):
             print("value is None")
-            return fig()
+            return go.Figure()
         # {'layout': pio.templates["plotly_dark_custom"].layout}
         else:
-            raise PreventUpdate
+            return go.Figure()
 
     @ callback(
         Output('test-zoom-chart', 'figure'),
