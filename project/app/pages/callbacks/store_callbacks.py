@@ -328,6 +328,7 @@ def get_store_callbacks(debug=True):
                         cond = (df_filtered[n]["HR[bpm]"] > df_filtered[n]["Seuil 2"]) & (
                             df_filtered[n]["HR[bpm]"].shift(1) <= df_filtered[n]["Seuil 2"])
                         if not df_filtered[n][cond].empty:
+                            threshold_muscul[1] = []
                             if debug:
                                 print("threshold 2 found")
                             indexes = df_filtered[n][cond].index.tolist()

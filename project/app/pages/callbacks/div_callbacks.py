@@ -1,11 +1,10 @@
-from dash import html, dcc, Input, Output, callback, State
+from dash import html, dcc, Input, Output, callback, State, dash_table
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.graph_objects as go
 import statsmodels.api as sm
 import pages.utils.functions as fc
 import datetime
-import darkdetect
 import plotly.io as pio
 
 
@@ -117,74 +116,104 @@ def get_div_callbacks(debug=True):
         if debug:
             print("--update_results_table--")
         if data:
-            lines = []
-            head = []
-            body = []
 
-            lines2 = []
-            head2 = []
-            body2 = []
+            print(data)
 
-            head = [html.Th("Groupes musculaires", scope="col")]
-            head2 = [html.Th("Groupes musculaires", scope="col")]
-
-            for m in stored_data[value][1][0]:
-                lines.append([html.Td(m)])
-                lines2.append([html.Td(m)])
+            df = pd.DataFrame(index=stored_data[value][1][0])
+            df["Groupes musculaires"] = stored_data[value][1][0]
 
             # fill with the threshold data
             if len(data[1]) > 0:
                 for i, seuil in enumerate(data[1]):
                     if len(seuil) > 0:
-                        head.append(
-                            html.Th(("Seuil " + str(i+1)), scope="col"))
-                        for j in range(len(stored_data[value][1][0])):
-                            lines[j].append(html.Td(round(seuil[j], 1)))
+                        df["Seuil" + str(i+1)] = seuil
 
             # fill with the minimal data
             if len(data[0]) > 0:
-                head.append(html.Th(("Desoxygénation minimale"), scope="col"))
-                for j in range(len(data[0])):
-                    lines[j].append(html.Td(round(data[0][j], 1)))
+                df["Desoxygénation minimale"] = data[0]
+
+            df2 = pd.DataFrame()
 
             # fill with the zones data
             if len(data[2]) > 0:
-                for i, v in enumerate(data[2]):
-                    if len(v) > 0:
-                        head2.append(
-                            html.Th(("Temps zone " + str(i + 1)), scope="col"))
-                        for j, t in enumerate(v):
-                            convert = str(datetime.timedelta(seconds=t))
-                            lines2[j].append(html.Td(convert))
+                if len(data[2][0]) > 0:
+                    df2["Groupes musculaires"] = stored_data[value][1][0]
+                    time = [[] for i in range(len(data[2][0]))]
+                    for i, v in enumerate(data[2]):
+                        if len(v) > 0:
+                            converts = []
+                            for j, t in enumerate(v):
+                                time[j].append(str(int(t/10)))
+                                converts.append(
+                                    str(datetime.timedelta(seconds=t)))
+                            df2["Temps zone " + str(i + 1)] = converts
+                    df2["Graph"] = [
+                        "{" + ",".join(l) + "}" for l in time]
 
-            if len(lines) > 0:
-                for i in range(len(lines)):
-                    body.append(html.Tr(lines[i]))
-
-            if len(lines2) > 0:
-                for i in range(len(lines2)):
-                    body2.append(html.Tr(lines2[i]))
+            df = df.round(1)
 
             content2 = [html.H2("Valeurs de référence", className="center"),
-                        html.Table(
-                [html.Thead(children=head),
-                 html.Tbody(
-                        body
-                        )]),
-            ]
-            if len(data[2]) > 0:
+                        dash_table.DataTable(
+                            df.to_dict('records'),
+                            style_header={
+                                'backgroundColor': 'grey',
+                                'lineHeight': '50px',
+                            },
+                            style_data={
+                                'backgroundColor': '#141e26',
+                                'lineHeight': '70px',
+                            },
+                            style_cell={
+                                'textAlign': 'center',
+                                "font-family": "system-ui",
+                                "color": "white",
+                                'width': '{}%'.format(100/len(df.columns)),
+                                'textOverflow': 'ellipsis',
+                                'overflow': 'hidden'},
+                            style_cell_conditional=[
+                                {
+                                    'if': {'column_id': 'Groupes musculaires'},
+                                    'textAlign': 'left'
+                                }
+                            ],
+                            style_as_list_view=True,)
+                        ]
+            if len(data[2][0]) > 0:
                 content2.extend([
                     html.H3("Temps dans les zones musculaires",
                             className="center"),
-                    html.Table(
-                        [html.Thead(children=head2),
-                         html.Tbody(
-                            body2
-                        )])])
+                    dash_table.DataTable(
+                        df2.to_dict('records'),
+                        style_header={
+                            'backgroundColor': 'grey',
+                            'lineHeight': '50px',
+                        },
+                        style_data={
+                            'backgroundColor': '#141e26',
+                            'lineHeight': '70px',
+                        },
+                        style_cell={
+                            'textAlign': 'center',
+                            "font-family": "system-ui",
+                            "color": "white",
+                            'width': '{}%'.format(100/len(df.columns)),
+                            'textOverflow': 'ellipsis',
+                            'overflow': 'hidden'},
+                        style_cell_conditional=[
+                            {
+                                'if': {'column_id': 'Groupes musculaires'},
+                                'textAlign': 'left'
+                            }
+                        ],
+                        style_data_conditional=[
+                            {"if": {"column_id": "Graph"},
+                             "font-family": "Sparks-Bar-Wide",
+                             "font-size": 150}],
+                        style_as_list_view=True,)
+                ])
 
-            content = html.Article(
-                content2
-            )
+            content = html.Article(children=content2
+                                   )
 
             return content
         else:

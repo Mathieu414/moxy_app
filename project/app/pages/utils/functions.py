@@ -37,10 +37,11 @@ def cut_peaks(df, range_right=20, range_left=20, prominence=8, width=20):
     """
     print("--cut_peaks--")
     peaks = df_find_peaks(df["HR[bpm]"], prominence, width)
+    print(peaks)
     if len(peaks) > 0:
         list_levels = []
         # check for index problems at the begining
-        if peaks[0]-range_left >= df.iloc[0].name:
+        if (peaks[0]-range_left) >= 0:
             df.iloc[peaks[0]-range_left:peaks[0]+range_right] = np.nan
             list_levels.append(df.iloc[:peaks[0]+range_right])
         if len(peaks) >= 1:
@@ -74,17 +75,6 @@ def parse_data(content, filename):
             return pd.read_excel(io.BytesIO(decoded))
         if "csv" in filename:
             return pd.read_csv(io.BytesIO(decoded))
-
-        elif "Details.txt" in filename:
-            # find the muscle groups in the file
-            file = decoded.decode('utf-8')
-            m = re.findall("\) - ([\w\s+]+)\n", file)
-            # for i, match in enumerate(m):
-            #   if any(word in match for word in re_exeptions):
-            #      m.pop(i)
-            t = re.findall("Start Time: (.*?)\n", file)[0]
-            d = re.findall("Workout Date: (.*?)\n", file)[0]
-            return [m, t, d]
 
     except Exception as e:
         print(e)

@@ -1,4 +1,5 @@
 from dash import Input, Output, State, callback
+import pandas as pd
 
 
 def get_threshold_callbacks(debug=True):
@@ -11,24 +12,20 @@ def get_threshold_callbacks(debug=True):
          Output('seuil2', 'value')],
         Input('test-choice', 'value'),
         State('seuils', 'data'),
+        State("data-upload", 'data'),
         prevent_initial_call=True
     )
-    def check_thresholds(value, seuils):
+    def check_thresholds(value, seuils, data):
         if debug:
             print("--check_thresholds--")
             print(seuils)
-        if (seuils is not None) and (value is not None):
+        if (data is not None) and (value is not None) and ("HR[bpm]" in pd.read_json(data[value][0]).columns):
             seuils = seuils[value]
-            if (seuils[0] is not None) or (seuils[1] is not None):
-                if debug:
-                    print("threshold enabled")
-                value_seuil1 = seuils[0]
-                value_seuil2 = seuils[1]
-                return [value_seuil1, value_seuil2, False, False, value_seuil1, value_seuil2]
-            else:
-                if debug:
-                    print("seuils are both None")
-                return [None, None, True, True, None, None]
+            if debug:
+                print("threshold enabled")
+            value_seuil1 = seuils[0]
+            value_seuil2 = seuils[1]
+            return [value_seuil1, value_seuil2, False, False, value_seuil1, value_seuil2]
         else:
             if debug:
                 print("seuils or value is None")
