@@ -7,6 +7,7 @@ from dash import html
 import re
 from scipy.signal import find_peaks
 from dtw import *
+from scipy import optimize
 
 
 def df_find_peaks(df, prominence=8, width=20):
@@ -37,10 +38,11 @@ def cut_peaks(df, range_right=20, range_left=20, prominence=8, width=20):
     """
     print("--cut_peaks--")
     peaks = df_find_peaks(df["HR[bpm]"], prominence, width)
+    print(peaks)
     if len(peaks) > 0:
         list_levels = []
         # check for index problems at the begining
-        if peaks[0]-range_left >= df.iloc[0].name:
+        if (peaks[0]-range_left) >= 0:
             df.iloc[peaks[0]-range_left:peaks[0]+range_right] = np.nan
             list_levels.append(df.iloc[:peaks[0]+range_right])
         if len(peaks) >= 1:
@@ -74,17 +76,6 @@ def parse_data(content, filename):
             return pd.read_excel(io.BytesIO(decoded))
         if "csv" in filename:
             return pd.read_csv(io.BytesIO(decoded))
-
-        elif "Details.txt" in filename:
-            # find the muscle groups in the file
-            file = decoded.decode('utf-8')
-            m = re.findall("\) - ([\w\s+]+)\n", file)
-            # for i, match in enumerate(m):
-            #   if any(word in match for word in re_exeptions):
-            #      m.pop(i)
-            t = re.findall("Start Time: (.*?)\n", file)[0]
-            d = re.findall("Workout Date: (.*?)\n", file)[0]
-            return [m, t, d]
 
     except Exception as e:
         print(e)
@@ -161,3 +152,50 @@ def get_time_zones(data, seuils_muscu):
         return ([time_z1, time_z2, time_z3])
     else:
         return []
+
+
+def segments_fit(X, Y, maxcount):
+    xmin = X.min()
+    xmax = X.max()
+
+    n = len(X)
+
+    AIC_ = float('inf')
+    BIC_ = float('inf')
+    r_ = None
+
+    for count in range(1, maxcount+1):
+
+        seg = np.full(count - 1, (xmax - xmin) / count)
+
+        px_init = np.r_[np.r_[xmin, seg].cumsum(), xmax]
+        py_init = np.array(
+            [Y[np.abs(X - x) < (xmax - xmin) * 0.1].mean() for x in px_init])
+
+        def func(p):
+            seg = p[:count - 1]
+            py = p[count - 1:]
+            px = np.r_[np.r_[xmin, seg].cumsum(), xmax]
+            return px, py
+
+        def err(p):  # This is RSS / n
+            px, py = func(p)
+            Y2 = np.interp(X, px, py)
+            return np.mean((Y - Y2)**2)
+
+        r = optimize.minimize(
+            err, x0=np.r_[seg, py_init], method='Nelder-Mead')
+
+        # Compute AIC/ BIC.
+        AIC = n * np.log10(err(r.x)) + 4 * count
+        BIC = n * np.log10(err(r.x)) + 2 * count * np.log(n)
+
+        if ((BIC < BIC_) & (AIC < AIC_)):  # Continue adding complexity.
+            r_ = r
+            AIC_ = AIC
+            BIC_ = BIC
+        else:  # Stop.
+            count = count - 1
+            break
+
+    return func(r_.x)  # Return the last (n-1)

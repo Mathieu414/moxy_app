@@ -5,11 +5,12 @@ from dash.exceptions import PreventUpdate
 def get_modal_callbacks(debug=True):
     @callback(
         Output("modal", "open"),
-        [Input("modal_open", "n_clicks"), Input("modal_close", "n_clicks")],
+        [Input("modal_open", "n_clicks"), Input("modal_close",
+                                                "n_clicks"), Input("modal_abort", "n_clicks")],
         [State("modal", "open")],
     )
-    def toggle_modal(n1, n2, open):
-        if n1 or n2:
+    def toggle_modal(n1, n2, n3, open):
+        if n1 or n2 or n3:
             return not open
         return open
 
@@ -23,5 +24,5 @@ def get_modal_callbacks(debug=True):
             for i, n in enumerate(data[value][1][0]):
                 content.append(html.Div([
                     html.P("Groupe musculaire " + str(i+1)),
-                    dcc.Input(id={'type': 'muscle-input', 'index': str(i)}, type='text', value=n)], className="grid"))
+                    dcc.Input(id={'type': 'muscle-input', 'index': str(i)}, type='text', value=n, debounce=True)], className="grid"))
             return content

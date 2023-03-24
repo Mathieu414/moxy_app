@@ -11,7 +11,7 @@ def get_figure_callbacks(debug=True):
         Output('test-chart', 'figure'),
         Input('test-choice', 'value'),
         [Input("seuils", "data"),
-         Input('data-upload', 'data')]
+         Input('data-upload', 'data')],
     )
     def update_graph(value, seuils, data):
         if debug:
@@ -88,4 +88,5 @@ def get_figure_callbacks(debug=True):
                     if debug:
                         print("create vo2 figure")
                     fig = figures.create_vo2_figure([data[3], data[1]])
+        fig.update_layout(height=650)
         return fig

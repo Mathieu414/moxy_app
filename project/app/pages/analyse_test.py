@@ -21,6 +21,8 @@ pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
 pio.templates["plotly_dark_custom"]['layout']['dragmode'] = 'select'
 pio.templates.default = "plotly_dark_custom"
 
+print(pio.templates["plotly_dark_custom"]['layout']["colorway"])
+
 d = True
 
 print("\n")
@@ -62,7 +64,8 @@ layout = html.Div(
                         disabled=True, className="secondary outline"),
             html.Dialog(
                 [
-                    html.Article([html.H3("Définir les groupes musulaires"),
+                    html.Article([html.A(className="close", id="modal_abort"),
+                                  html.H3("Définir les groupes musulaires"),
                                   html.Div(id="modal_content"),
                                   html.Footer(
                         html.Button("Confirmer", id="modal_close")
