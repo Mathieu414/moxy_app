@@ -2,7 +2,8 @@ import pandas as pd
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import statsmodels.api as sm
+import pages.utils.functions as fc
+import plotly.io as pio
 
 
 def create_figure(data):
@@ -93,20 +94,19 @@ def create_vo2_figure(data):
 
     data[0] = pd.concat(data[0])
 
+    colors = pio.templates["plotly_dark_custom"]['layout']["colorway"]
+
     if "VO2" in data[0].columns:
         print("VO2")
         # fig.add_trace(go.Scatter(x=data[0]["Time[s]"], y=data[0]["VO2"],name="VO2"))
-        for n in data[1][0]:
-            print(n)
-            trendline = sm.nonparametric.lowess(data[0][n],
-                                                data[0]["VO2"],
-                                                frac=0.5)
+        for i, n in enumerate(data[1][0]):
+            px, py = fc.segments_fit(data[0]["VO2"], data[0][n], 4)
             fig.add_trace(go.Scattergl(
-                x=data[0]["VO2"], y=data[0][n], name=n,  hovertemplate="%{y:.2f} %<extra></extra>", mode='markers'))
-            fig.add_trace(go.Scatter(x=trendline[:, 0],
-                                     y=trendline[:, 1],
-                                     mode='lines',
-                                     name="Tendance",
-                                     line_shape='spline'))
+                x=data[0]["VO2"], y=data[0][n], name=n,  hovertemplate="%{y:.2f} %<extra></extra>", mode='markers', marker=dict(color=colors[i])))
+            fig.add_trace(go.Scattergl(x=px,
+                                       y=py,
+                                       mode='lines',
+                                       name="Tendance",
+                                       line=dict(color=colors[i])))
 
     return fig

@@ -103,6 +103,20 @@
     background-color: #ffffff22;
 }
 
+dialog article .close {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    margin-top: calc(var(--block-spacing-vertical) * -.5);
+    margin-bottom: var(--typography-spacing-vertical);
+    margin-left: auto;
+    background-position: center;
+    background-size: auto 1rem;
+    background-repeat: no-repeat;
+    opacity: .5;
+    transition: opacity var(--transition);
+}
+
 @font-face {
     font-family: 'Sparks-Bar-Narrow';
     src: url('https://tools.aftertheflood.com/sparks/output/eot/Sparks-Bar-Narrow.eot');

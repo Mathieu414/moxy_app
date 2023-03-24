@@ -31,6 +31,13 @@ def get_div_callbacks(debug=True):
                         html.H2("Desoxygénation musculaire en fonction du HR", className="center")]
                     graphs = []
                     for n in data[value][1][0]:
+
+                        # remove the nas and convert the df columns to numpy arrays
+                        x = data_filtered["HR[bpm]"].dropna().to_numpy()
+                        y = data_filtered[n].dropna().to_numpy()
+
+                        px, py = fc.segments_fit(x, y, 4)
+
                         fig = go.Figure()
                         fig.add_trace(go.Scatter(x=data_filtered["HR[bpm]"],
                                                  y=data_filtered[n],
@@ -43,14 +50,16 @@ def get_div_callbacks(debug=True):
                                                             contours_showlines=False))
                         trendline = sm.nonparametric.lowess(data_filtered[n],
                                                             data_filtered["HR[bpm]"],
-                                                            frac=0.5,
+                                                            frac=0.3,
                                                             missing="drop")
-                        fig.add_trace(go.Scatter(x=trendline[:, 0],
-                                                 y=trendline[:, 1],
-                                                 mode='lines',
+                        fig.add_trace(go.Scatter(x=px,
+                                                 y=py,
+                                                 mode='lines+text',
                                                  line_color='#ab63fa',
                                                  name="Tendance",
-                                                 line_shape='spline'))
+                                                 text=[round(num, 1)
+                                                       for num in px],
+                                                 textposition="top right"))
                         if "Seuil 1" in data_filtered.columns:
                             fig.add_vline(x=data_filtered["Seuil 1"][0], line_width=3, line_dash="dash",
                                           line_color="green", name="Seuil 1")
@@ -75,7 +84,7 @@ def get_div_callbacks(debug=True):
         else:
             return None
 
-    @callback(
+    @ callback(
         Output('div-error-filter', 'children'),
         Input("filter-selection-button", "n_clicks"),
         [State("data-upload", 'data'),
@@ -105,7 +114,7 @@ def get_div_callbacks(debug=True):
         else:
             return html.P("Pas de test selectionné", className="error")
 
-    @callback(
+    @ callback(
         Output('div-table', "children"),
         Input("analytics", "data"),
         [State('data-upload', 'data'),
@@ -154,30 +163,30 @@ def get_div_callbacks(debug=True):
 
             content2 = [html.H2("Valeurs de référence", className="center"),
                         dash_table.DataTable(
-                            df.to_dict('records'),
-                            style_header={
-                                'backgroundColor': 'grey',
-                                'lineHeight': '50px',
-                            },
-                            style_data={
-                                'backgroundColor': '#141e26',
-                                'lineHeight': '70px',
-                            },
-                            style_cell={
-                                'textAlign': 'center',
-                                "font-family": "system-ui",
-                                "color": "white",
-                                'width': '{}%'.format(100/len(df.columns)),
-                                'textOverflow': 'ellipsis',
-                                'overflow': 'hidden'},
-                            style_cell_conditional=[
-                                {
-                                    'if': {'column_id': 'Groupes musculaires'},
-                                    'textAlign': 'left'
-                                }
-                            ],
-                            style_as_list_view=True,)
-                        ]
+                df.to_dict('records'),
+                style_header={
+                    'backgroundColor': 'grey',
+                    'lineHeight': '50px',
+                },
+                style_data={
+                    'backgroundColor': '#141e26',
+                    'lineHeight': '70px',
+                },
+                style_cell={
+                    'textAlign': 'center',
+                    "font-family": "system-ui",
+                    "color": "white",
+                    'width': '{}%'.format(100/len(df.columns)),
+                    'textOverflow': 'ellipsis',
+                    'overflow': 'hidden'},
+                style_cell_conditional=[
+                    {
+                        'if': {'column_id': 'Groupes musculaires'},
+                        'textAlign': 'left'
+                    }
+                ],
+                style_as_list_view=True,)
+            ]
             if len(data[2][0]) > 0:
                 content2.extend([
                     html.H3("Temps dans les zones musculaires",
