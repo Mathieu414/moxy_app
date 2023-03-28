@@ -21,8 +21,6 @@ pio.templates["plotly_dark_custom"]['layout']['plot_bgcolor'] = '#141e26'
 pio.templates["plotly_dark_custom"]['layout']['dragmode'] = 'select'
 pio.templates.default = "plotly_dark_custom"
 
-print(pio.templates["plotly_dark_custom"]['layout']["colorway"])
-
 d = True
 
 print("\n")
@@ -48,7 +46,7 @@ layout = html.Div(
             html.P(html.B(
                 '1. Charger le fichier DataAverage.xlsx/.csv')),
             dcc.Upload(
-                id='test-upload',
+                id='test-data-upload',
                 children=html.Button(
                     'Upload')
             ),
@@ -113,7 +111,8 @@ layout = html.Div(
                              className='grid'),
                     dcc.Loading(html.Div(
                         children=dcc.Graph(
-                            id="test-chart"
+                            id="test-chart",
+                            figure=go.Figure()
                         ),
                         className="card"
                     ))
@@ -215,11 +214,11 @@ layout = html.Div(
         dcc.Store(id='analytics', storage_type='session')
     ])
 
-get_store_callbacks(d)
+get_modal_callbacks(d)
 get_figure_callbacks(d)
 get_dropdown_callbacks(d)
 get_threshold_callbacks(d)
 get_div_callbacks(d)
 get_p_callbacks(d)
 get_button_callbacks(d)
-get_modal_callbacks(d)
+get_store_callbacks(d)

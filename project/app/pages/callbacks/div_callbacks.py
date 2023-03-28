@@ -12,8 +12,7 @@ def get_div_callbacks(debug=True):
     @callback(
         Output('div-hr', 'children'),
         Input('test-choice', 'value'),
-        Input('data-upload', 'data'),
-        State("seuils", "data")
+        Input('data-upload', 'data')
     )
     def add_hr_graphs(value, data):
         # For the printing style
@@ -34,10 +33,10 @@ def get_div_callbacks(debug=True):
                     for n in data[value][1][0]:
 
                         # remove the nas and convert the df columns to numpy arrays
-                        x = data_filtered["HR[bpm]"].dropna().to_numpy()
-                        y = data_filtered[n].dropna().to_numpy()
+                        x_fit = data_filtered["HR[bpm]"].dropna().to_numpy()
+                        y_fit = data_filtered[n].dropna().to_numpy()
 
-                        px, py = fc.segments_fit(x, y, 4)
+                        px, py = fc.segments_fit(x_fit, y_fit, 4)
 
                         fig = go.Figure()
                         fig.add_trace(go.Scatter(x=data_filtered["HR[bpm]"],
@@ -125,28 +124,30 @@ def get_div_callbacks(debug=True):
     def update_results_table(data, stored_data, value):
         if debug:
             print("--update_results_table--")
-        if data:
-
             print(data)
+        if data:
 
             df = pd.DataFrame(index=stored_data[value][1][0])
             df["Groupes musculaires"] = stored_data[value][1][0]
 
             # fill with the threshold data
             if len(data[1]) > 0:
+                print("Fill with thresholds values")
                 for i, seuil in enumerate(data[1]):
                     if len(seuil) > 0:
                         df["Seuil" + str(i+1)] = seuil
 
             # fill with the minimal data
             if len(data[0]) > 0:
+                print("Fill with minimal values")
                 df["Desoxygénation minimale"] = data[0]
 
             df2 = pd.DataFrame()
 
-            # fill with the zones data
+            # fill with the zones data : only do if both tresholds are defined, i.e. if data[2] is full with data
             if len(data[2]) > 0:
-                if len(data[2][0]) > 0:
+                if (len(data[2][0]) != 0) and (len(data[2][1]) != 0) and (len(data[2][2]) != 0):
+                    print("Fill with zones values")
                     df2["Groupes musculaires"] = stored_data[value][1][0]
                     time = [[] for i in range(len(data[2][0]))]
                     for i, v in enumerate(data[2]):
@@ -188,39 +189,40 @@ def get_div_callbacks(debug=True):
                 ],
                 style_as_list_view=True,)
             ]
-            if len(data[2][0]) > 0:
-                content2.extend([
-                    html.H3("Temps dans les zones musculaires",
-                            className="center"),
-                    dash_table.DataTable(
-                        df2.to_dict('records'),
-                        style_header={
-                            'backgroundColor': 'grey',
-                            'lineHeight': '50px',
-                        },
-                        style_data={
-                            'backgroundColor': '#141e26',
-                            'lineHeight': '70px',
-                        },
-                        style_cell={
-                            'textAlign': 'center',
-                            "font-family": "system-ui",
-                            "color": "white",
-                            'width': '{}%'.format(100/len(df.columns)),
-                            'textOverflow': 'ellipsis',
-                            'overflow': 'hidden'},
-                        style_cell_conditional=[
-                            {
-                                'if': {'column_id': 'Groupes musculaires'},
-                                'textAlign': 'left'
-                            }
-                        ],
-                        style_data_conditional=[
-                            {"if": {"column_id": "Graph"},
-                             "font-family": "Sparks-Bar-Wide",
-                             "font-size": 150}],
-                        style_as_list_view=True,)
-                ])
+            if len(data[2]) > 0:
+                if (len(data[2][0]) != 0) and (len(data[2][1]) != 0) and (len(data[2][2]) != 0):
+                    content2.extend([
+                        html.H3("Temps dans les zones musculaires",
+                                className="center"),
+                        dash_table.DataTable(
+                            df2.to_dict('records'),
+                            style_header={
+                                'backgroundColor': 'grey',
+                                'lineHeight': '50px',
+                            },
+                            style_data={
+                                'backgroundColor': '#141e26',
+                                'lineHeight': '70px',
+                            },
+                            style_cell={
+                                'textAlign': 'center',
+                                "font-family": "system-ui",
+                                "color": "white",
+                                'width': '{}%'.format(100/len(df.columns)),
+                                'textOverflow': 'ellipsis',
+                                'overflow': 'hidden'},
+                            style_cell_conditional=[
+                                {
+                                    'if': {'column_id': 'Groupes musculaires'},
+                                    'textAlign': 'left'
+                                }
+                            ],
+                            style_data_conditional=[
+                                {"if": {"column_id": "Graph"},
+                                 "font-family": "Sparks-Bar-Wide",
+                                 "font-size": 150}],
+                            style_as_list_view=True,)
+                    ])
 
             content = html.Article(children=content2
                                    )

@@ -29,3 +29,10 @@ def get_dropdown_callbacks(debug=True):
             return {}
         else:
             raise PreventUpdate
+
+    @ callback(
+        Output('test-choice', 'value'),
+        Input("clear-button", "n_clicks"),
+    )
+    def clear_value(clear_button):
+        return None

@@ -94,10 +94,13 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
     """
     # remove the line with the units
     vo2_df = vo2_df.iloc[1:]
+    if 'VO2' in moxy_data.columns:
+        moxy_data = moxy_data.drop(['VO2', 'FC'], axis=1)
+    print(moxy_data.columns)
     # transform the time into seconds
     vo2_df['Temps'] = (pd.to_datetime(
         vo2_df['Temps']) - pd.to_datetime(
-        vo2_df['Temps'][1])).dt.total_seconds().round().astype(int)
+        vo2_df['Temps'][1])).dt.total_seconds().round().dropna().astype(int)
     vo2_df = vo2_df.rename(
         columns={"Temps": "Time[s]"})
     # tranform the hr into numeric values
@@ -137,6 +140,7 @@ def get_time_zones(data, seuils_muscu):
     """
     print("--get-time-zones--")
     if len(seuils_muscu) > 0:
+        print(seuils_muscu)
         time_z1 = []
         time_z2 = []
         time_z3 = []
@@ -145,8 +149,9 @@ def get_time_zones(data, seuils_muscu):
                 time_z1.append(
                     len(data[0][m][data[0][m] > seuils_muscu[0][i]].index.tolist()))
             if len(seuils_muscu[1]) > 0:
-                time_z2.append(len(data[0][m][(data[0][m] <= seuils_muscu[0][i]) & (
-                    data[0][m] > seuils_muscu[1][i])].index.tolist()))
+                if len(seuils_muscu[0]) > 0:
+                    time_z2.append(len(data[0][m][(data[0][m] <= seuils_muscu[0][i]) & (
+                        data[0][m] > seuils_muscu[1][i])].index.tolist()))
                 time_z3.append(
                     len(data[0][m][data[0][m] < seuils_muscu[1][i]].index.tolist()))
         return ([time_z1, time_z2, time_z3])
@@ -199,3 +204,38 @@ def segments_fit(X, Y, maxcount):
             break
 
     return func(r_.x)  # Return the last (n-1)
+
+
+def find_thresholds(seuil: int, df_filtered: list, muscle_groups: list, threshold_name: str, remove_range=5) -> list:
+    """find the muscle threshold corresponding to the HR threshold
+
+    Args:
+        seuil (int): HR threshold
+        df_filtered (list of pd.Dataframe): levels of the test
+        muscle_groups (list): list of muscle names
+        threshold_name (string): name of the target column corresponding with the threshold number
+        remove_range (int, optional): amount of points considered around the matching value to compute the threshold. Defaults to 5.
+
+    Returns:
+        list: muscle threshold values corresponding to the given HR threshold
+    """
+    threshold_muscle = []
+    if (seuil is not None) and (seuil != 0):
+        print("compute the ", threshold_name)
+        # iterate over the levels of the test
+        for n in range(len(df_filtered)):
+            cond = (df_filtered[n]["HR[bpm]"] > df_filtered[n][threshold_name]) & (
+                df_filtered[n]["HR[bpm]"].shift(1) <= df_filtered[n][threshold_name])
+            if not df_filtered[n][cond].empty:
+                print(threshold_name + " found")
+                indexes = df_filtered[n][cond].index.tolist()
+                # store the 10 points around the first occurence matching the condition
+                target_muscul = df_filtered[n].loc[indexes[0] -
+                                                   remove_range: indexes[0]+remove_range]
+                # iterate over the muscle groups, and do the mean of the matching data
+                for m in muscle_groups:
+                    threshold_muscle.append(
+                        target_muscul[m].mean())
+                # the first occurence is the relevant one, no need to go further
+                break
+    return threshold_muscle

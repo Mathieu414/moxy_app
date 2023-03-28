@@ -19,8 +19,6 @@ pio.templates["plotly_dark_custom"]['layout']['dragmode'] = 'select'
 
 pio.templates.default = "plotly_dark_custom"
 
-print()
-
 
 app = dash.Dash(
     __name__,

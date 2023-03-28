@@ -18,8 +18,8 @@ def get_store_callbacks(debug=True):
          Output('seuils', 'data'),
          Output("peaks-parameters", "data")],
 
-        [Input("test-upload", "contents"),
-         Input("test-upload", "filename"),
+        [Input("test-data-upload", "contents"),
+         Input("test-data-upload", "filename"),
          Input("seuil1", 'value'),
          Input("seuil2", 'value'),
          Input("clear-button", "n_clicks"),
@@ -51,7 +51,7 @@ def get_store_callbacks(debug=True):
                 in [0], data-upload.data : list containing the figures data for each threshold :
                     in [0] : dataframe containing the raw data imported
                     in [1] : 
-                        in [0] : list containing the different muscles contained in the "Details.txt" file
+                        in [0] : list containing the different muscles registered in the modal, or just the columns names
                         in [1] : string containing the start time of the record
                         in [2] : string containing the date
                     in [2] (optional) : dataframe containing the selected data from [0]
@@ -64,7 +64,7 @@ def get_store_callbacks(debug=True):
         if debug:
             print("--data-upload--")
 
-        if (ctx.triggered_id == "test-upload") and (('DataAverage.xlsx' in filenames) or ('DataAverage.csv' in filenames)):
+        if (ctx.triggered_id == "test-data-upload") and (('DataAverage.xlsx' in filenames) or ('DataAverage.csv' in filenames)):
             data = []
             data.append(fc.parse_data(contents, filenames))
 
@@ -92,6 +92,7 @@ def get_store_callbacks(debug=True):
             else:
                 return [[[data[0], data[1]]], [new_seuils], [[8, 20, 20, 20]]]
 
+        # if the element triggered is the modal
         if (ctx.triggered_id == "modal_close"):
             # change the column names of the base data
             col_names = dict(zip(stored_data[value][1][0], modal_values))
@@ -128,50 +129,49 @@ def get_store_callbacks(debug=True):
             print("valeur de seuil2")
             print(seuil2)
 
+        # if the triggered element are the thresholds input
         if (ctx.triggered_id in ["seuil1", "seuil2"]) and (not all(s is None for s in (seuil1, seuil2))):
             if debug:
                 print("Seuil 1 or Seuil 2 are trigered and are not None")
             df = pd.read_json(stored_data[value][0])
             df_selected = None
             df_filtered = None
+            # Read the stored selected data
             if len(stored_data[value]) >= 3:
                 df_selected = pd.read_json(stored_data[value][2])
+            # read the stored filtered data
             if len(stored_data[value]) >= 4:
                 df_filtered = stored_data[value][3]
                 for n in range(len(df_filtered)):
                     df_filtered[n] = pd.read_json(df_filtered[n])
-            if (seuil1 is not None) and (seuil1 != 0):
-                df["Seuil 1"] = seuil1
-                if df_selected is not None:
-                    df_selected["Seuil 1"] = seuil1
-                if df_filtered is not None:
-                    for n in range(len(df_filtered)):
-                        df_filtered[n]["Seuil 1"] = seuil1
-            else:
-                if "Seuil 1" in df.columns:
-                    df = df.drop(columns="Seuil 1")
-                if (df_selected is not None) and ("Seuil 1" in df_selected.columns):
-                    df_selected = df_selected.drop("Seuil 1")
-                if (df_filtered is not None) and ("Seuil 1" in df_filtered[0].columns):
-                    for n in range(len(df_filtered)):
-                        df_filtered[n] = df_filtered[n].drop("Seuil 1")
-            if (seuil2 is not None) and (seuil2 != 0):
-                df["Seuil 2"] = seuil2
-                if df_selected is not None:
-                    df_selected["Seuil 2"] = seuil2
-                if df_filtered is not None:
-                    for n in range(len(df_filtered)):
-                        df_filtered[n]["Seuil 2"] = seuil2
-            else:
-                if "Seuil 2" in df.columns:
-                    df = df.drop(columns="Seuil 2")
-                if (df_selected is not None) and ("Seuil 2" in df_selected.columns):
-                    df_selected = df_selected.drop(columns="Seuil 2")
-                if (df_filtered is not None) and ("Seuil 2" in df_filtered[0].columns):
-                    for n in range(len(df_filtered)):
-                        df_filtered[n] = df_filtered[n].drop(columns="Seuil 2")
+
+            def set_seuils(seuil, df, df_selected, df_filtered, name):
+                if (seuil is not None) and (seuil != 0):
+                    df[name] = seuil
+                    if df_selected is not None:
+                        df_selected[name] = seuil
+                    if df_filtered is not None:
+                        for n in range(len(df_filtered)):
+                            df_filtered[n][name] = seuil
+                else:
+                    if name in df.columns:
+                        df = df.drop(columns=name)
+                    if (df_selected is not None) and (name in df_selected.columns):
+                        df_selected = df_selected.drop(name)
+                    if (df_filtered is not None) and (name in df_filtered[0].columns):
+                        for n in range(len(df_filtered)):
+                            df_filtered[n] = df_filtered[n].drop(name)
+
+                return df, df_selected, df_filtered
+
+            df, df_selected, df_filtered = set_seuils(
+                seuil1, df, df_selected, df_filtered, "Seuil 1")
+            df, df_selected, df_filtered = set_seuils(
+                seuil2, df, df_selected, df_filtered, "Seuil 2")
+
             df = df.to_json()
             stored_data[value][0] = df
+
             if df_selected is not None:
                 df_selected = df_selected.to_json()
                 stored_data[value][2] = df_selected
@@ -179,6 +179,7 @@ def get_store_callbacks(debug=True):
                 for n in range(len(df_filtered)):
                     df_filtered[n] = df_filtered[n].to_json()
                 stored_data[value][3] = df_filtered
+
             stored_seuils[value] = [seuil1, seuil2]
             return [stored_data, stored_seuils, no_update]
 
@@ -202,7 +203,7 @@ def get_store_callbacks(debug=True):
                     if str(value) in vo2_data.keys():
                         if debug:
                             print("synchronize vo2")
-                        [vo2_df, _] = vo2_data[str(value)]
+                        vo2_df = vo2_data[str(value)]
                         data_selected = fc.synchronise_moxy_vo2(
                             data_selected, pd.read_json(vo2_df))
                 if len(stored_data[value]) >= 3:
@@ -219,14 +220,15 @@ def get_store_callbacks(debug=True):
                     if vo2_data[str(value)]:
                         if debug:
                             print("synchronize vo2")
-                        [vo2_df, _] = vo2_data[str(value)]
+                        vo2_df = vo2_data[str(value)]
                         data_selected = fc.synchronise_moxy_vo2(
                             data_selected, pd.read_json(vo2_df))
+                        stored_data[value][2] = data_selected.to_json()
 
                         # If there is already filtered data, then recompute it with the vo2 data
                         if len(stored_data[value]) >= 4:
                             list_data_filtered = fc.cut_peaks(
-                                data_selected, prominence=prominence, width=width)[0]
+                                data_selected, prominence=prominence, width=width, range_left=removed_width_left, range_right=removed_width_right)[0]
 
                             for n in range(len(list_data_filtered)):
                                 list_data_filtered[n] = list_data_filtered[n].to_json(
@@ -234,7 +236,6 @@ def get_store_callbacks(debug=True):
 
                             stored_data[value][3] = list_data_filtered
 
-                        stored_data[value][2] = data_selected.to_json()
                         return [stored_data, no_update, no_update]
 
         if (ctx.triggered_id == "filter-selection-button"):
@@ -277,108 +278,73 @@ def get_store_callbacks(debug=True):
     @callback(
         Output("analytics", "data"),
         Input('test-filter-chart', 'figure'),
+        Input("clear-button", "n_clicks"),
         [State('data-upload', 'data'),
          State("test-choice", 'value'),
          State("seuils", 'data')],
         prevent_initial_call=True
     )
-    def compute_muscular_thresholds(fig, stored_data, value, seuils):
+    def compute_muscular_thresholds(fig, clear_button, stored_data, value, seuils):
         if debug:
             print("--compute_muscular_thresholds--")
-        if "data" in fig.keys() and fig["data"]:
-            analytics = [[], [], []]
-            df_filtered = stored_data[value][3]
-            for n in range(len(df_filtered)):
-                df_filtered[n] = pd.read_json(df_filtered[n])
-            # check if there is any thresholds in store
-            if seuils[value] != [0, 0] or seuils[value] != [None, None]:
-                print("seuils are not None")
-                threshold_muscul = [[], []]
+            print(seuils)
+        if (ctx.triggered_id == "test-filter-chart"):
+            if "data" in fig.keys() and fig["data"]:
+                analytics = [[], [], []]
                 df_filtered = stored_data[value][3]
-                if (seuils[value][1] is not None) and (seuils[value][1] != 0):
-                    if debug:
-                        print("compute the first threshod")
-                    # iterate over the levels of the test
-                    for n in range(len(df_filtered)):
-                        cond = (df_filtered[n]["HR[bpm]"] > df_filtered[n]["Seuil 1"]) & (
-                            df_filtered[n]["HR[bpm]"].shift(1) <= df_filtered[n]["Seuil 1"])
-                        if not df_filtered[n][cond].empty:
-                            if debug:
-                                print("threshold 1 found")
-                            indexes = df_filtered[n][cond].index.tolist()
-                            target_muscul = df_filtered[n].loc[indexes[0] -
-                                                               5: indexes[0]+5]
-                            if len(indexes) > 1:
-                                if debug:
-                                    print("several matches found")
-                                # iterate over the matches found
-                                for i in range(len(indexes)-1):
-                                    target_muscul = pd.concat(
-                                        [target_muscul, df_filtered[n].loc[indexes[i+1]-5: indexes[i+1]+5]])
-                            # iterate over the muscle groups
-                            for m in stored_data[value][1][0]:
-                                threshold_muscul[0].append(
-                                    target_muscul[m].mean())
+                for n in range(len(df_filtered)):
+                    df_filtered[n] = pd.read_json(df_filtered[n])
+                # check if there is any thresholds in store
+                if seuils[value] != [0, 0] and seuils[value] != [None, None]:
+                    print("seuils are not None")
+                    threshold_muscul = [[], []]
+                    df_filtered = stored_data[value][3]
+                    # find the two thresholds
+                    threshold_muscul[0] = fc.find_thresholds(
+                        seuils[value][0], df_filtered, stored_data[value][1][0], "Seuil 1")
+                    threshold_muscul[1] = fc.find_thresholds(
+                        seuils[value][1], df_filtered, stored_data[value][1][0], "Seuil 2")
+                    analytics[1] = threshold_muscul
 
-                if (seuils[value][1] is not None) and (seuils[value][1] != 0):
-                    if debug:
-                        print("compute the second threshod")
-                    # iterate over the levels of the test
-                    for n in range(len(df_filtered)):
-                        cond = (df_filtered[n]["HR[bpm]"] > df_filtered[n]["Seuil 2"]) & (
-                            df_filtered[n]["HR[bpm]"].shift(1) <= df_filtered[n]["Seuil 2"])
-                        if not df_filtered[n][cond].empty:
-                            threshold_muscul[1] = []
-                            if debug:
-                                print("threshold 2 found")
-                            indexes = df_filtered[n][cond].index.tolist()
-                            target_muscul = df_filtered[n].loc[indexes[0] -
-                                                               5: indexes[0]+5]
-                            if len(indexes) > 1:
-                                if debug:
-                                    print("several matches found")
-                                # iterate over the matches found
-                                for i in range(len(indexes)-1):
-                                    target_muscul = pd.concat(
-                                        [target_muscul, df_filtered[n].loc[indexes[i+1]-5: indexes[i+1]+5]])
-                            # iterate over the muscle groups
-                            for m in stored_data[value][1][0]:
-                                threshold_muscul[1].append(
-                                    target_muscul[m].mean())
-                analytics[1] = threshold_muscul
+                # find min and max for each muscular groups
+                df_filtered_concat = pd.concat(df_filtered)
+                min_max = []
+                for m in stored_data[value][1][0]:
+                    min_max.append(df_filtered_concat[m].min())
+                analytics[0] = min_max
 
-            # find min and max for each muscular groups
-            df_filtered_concat = pd.concat(df_filtered)
-            min_max = []
-            for m in stored_data[value][1][0]:
-                min_max.append(df_filtered_concat[m].min())
-            analytics[0] = min_max
+                # compute the time spent in the zones
+                analytics[2] = fc.get_time_zones(
+                    [df_filtered_concat, stored_data[value][1][0]], analytics[1])
 
-            # compute the time spent in the zones
-            analytics[2] = fc.get_time_zones(
-                [df_filtered_concat, stored_data[value][1][0]], analytics[1])
-
-            return analytics
-        else:
+                return analytics
+            else:
+                return None
+        if (ctx.triggered_id == "clear-button"):
             return None
 
     @callback(
         Output("vo2-data", "data"),
-        [Input("vo2-upload", "contents")],
+        [Input("vo2-upload", "contents"),
+         Input("clear-button", "n_clicks"),],
         State("test-choice", 'value'),
-        State("vo2-data", "data")
+        State("vo2-data", "data"),
+        prevent_initial_call=True
     )
-    def store_xml(content, value, stored_content):
+    def store_xml(content, clear_button, value, stored_content):
         if debug:
             print('--store_xml--')
-        if content:
-            content_type, content_string = content.split(",")
-            decoded = base64.b64decode(content_string)
-            [df, time] = read_xml.parse_xml(decoded)
-            if stored_content:
-                stored_content[value] = [df.to_json(), time]
-                return stored_content
+        if (ctx.triggered_id == "vo2-upload"):
+            if content:
+                content_type, content_string = content.split(",")
+                decoded = base64.b64decode(content_string)
+                df = read_xml.parse_xml(decoded)
+                if stored_content:
+                    stored_content[value] = df.to_json()
+                    return stored_content
+                else:
+                    return {value: df.to_json()}
             else:
-                return {value: [df.to_json(), time]}
-        else:
-            raise PreventUpdate
+                raise PreventUpdate
+        if (ctx.triggered_id == "clear-button"):
+            return None

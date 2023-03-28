@@ -25,10 +25,10 @@ def get_figure_callbacks(debug=True):
             fig = figures.create_figure([data[0], data[1][0]])
             print("create figure :")
             return fig
-        if (value == 0) and (data is None):
+        # if the value returns to None (selection is cleared)
+        if ((value == 0) or (value is None)) and (data is not None):
             print("value is None")
             return go.Figure()
-        # {'layout': pio.templates["plotly_dark_custom"].layout}
         else:
             return go.Figure()
 
@@ -41,7 +41,6 @@ def get_figure_callbacks(debug=True):
         if debug:
             print("--display_zoomed_data--")
         fig = go.Figure()
-        # fig = {'layout': pio.templates["plotly_dark_custom"].layout}
         if (value is not None) and (data is not None):
             if len(data[value]) >= 3:
                 if debug:
@@ -58,7 +57,6 @@ def get_figure_callbacks(debug=True):
     )
     def display_filtered_data(value, data):
         fig = go.Figure()
-        # fig = {'layout': pio.templates["plotly_dark_custom"].layout}
         if (value is not None) and (data is not None):
             if len(data[value]) >= 4:
                 if debug:
@@ -77,7 +75,6 @@ def get_figure_callbacks(debug=True):
     def display_vo2_data(value, data):
         print("--update_vo2_graph--")
         fig = go.Figure()
-        # fig = {'layout': pio.templates["plotly_dark_custom"].layout}
         if (value is not None) and (data is not None):
             data = data[value]
             print("Longeur des données", len(data))
