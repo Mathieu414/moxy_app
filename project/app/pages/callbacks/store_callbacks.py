@@ -7,6 +7,7 @@ import pages.utils.functions as fc
 import pages.utils.read_xml as read_xml
 import plotly.io as pio
 import darkdetect
+import re
 
 import base64
 import io
@@ -52,8 +53,7 @@ def get_store_callbacks(debug=True):
                     in [0] : dataframe containing the raw data imported
                     in [1] : 
                         in [0] : list containing the different muscles registered in the modal, or just the columns names
-                        in [1] : string containing the start time of the record
-                        in [2] : string containing the date
+                        in [1] : list of the initial column names, to keep the record of the moxy numbers
                     in [2] (optional) : dataframe containing the selected data from [0]
                     in [3] (optional) : dataframe containing the filtered data from [1]
                 in [1], seuils.data : list containing a list of thresholds for each test
@@ -65,10 +65,25 @@ def get_store_callbacks(debug=True):
             print("--data-upload--")
 
         if (ctx.triggered_id == "test-data-upload") and (('DataAverage.xlsx' in filenames) or ('DataAverage.csv' in filenames)):
+
             data = []
             data.append(fc.parse_data(contents, filenames))
 
-            data.append([[col for col in data[0].columns if 'SmO2' in col]])
+            moxy_numbers = []
+            col_names = []
+            for col in data[0].columns:
+                if 'SmO2' in col:
+                    if re.search("-  (\d)\[", col) is not None:
+                        moxy_numbers.append(
+                            re.findall("-  (\d)\[", col)[0])
+                    else:
+                        moxy_numbers.append("1")
+                    col_names.append(col)
+
+            # add the column names corresponding to the muscles
+            data.append([col_names, moxy_numbers])
+
+            print(data[1])
 
             # smooth the data
             for n in data[1][0]:

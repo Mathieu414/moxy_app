@@ -62,9 +62,12 @@ layout = html.Div(
                         disabled=True, className="secondary outline"),
             html.Dialog(
                 [
-                    html.Article([html.A(className="close", id="modal_abort"),
-                                  html.H3("Définir les groupes musulaires"),
-                                  html.Div(id="modal_content"),
+                    html.Article([html.Div([html.A(className="close", id="modal_abort"),
+                                  html.H2("Définir les groupes musulaires"),
+                                  html.H3(
+                                      "Vérifier les groupes musculaires correspondant aux numéro de Moxy sur le fichier Details.txt")], className="headings"),
+                                  html.Div(id="modal_content",
+                                           className="center"),
                                   html.Footer(
                         html.Button("Confirmer", id="modal_close")
                     ),])
