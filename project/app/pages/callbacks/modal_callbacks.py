@@ -22,7 +22,7 @@ def get_modal_callbacks(debug=True):
         content = []
         if (data is not None) and (value is not None):
             for i, n in enumerate(data[value][1][0]):
-                content.append(html.Div([
-                    html.P("Groupe musculaire " + str(i+1)),
-                    dcc.Input(id={'type': 'muscle-input', 'index': str(i)}, type='text', value=n, debounce=True)], className="grid"))
+                content.append(
+                    html.Label(
+                        [("Moxy n° " + data[value][1][1][i]), dcc.Input(id={'type': 'muscle-input', 'index': str(i)}, name=("moxy" + data[value][1][1][i]), type='text', value=n, debounce=True)], style={"margin-left": "15%", "margin-right": "15%"}))
             return content
