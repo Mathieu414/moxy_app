@@ -151,21 +151,21 @@ layout = html.Div(
                          className="col-sm-4"),
                 ], className="row no-print"),
                 html.Div([
-                    html.Div(html.Label(["Hauteur", dcc.Input(id="prominence",
-                                                              type="number"),]), className="col-sm-2"),
-                    html.Div(html.Label(["Largeur", dcc.Input(id="width",
-                                                              type="number")]), className="col-sm-2"),
+                    html.Div(html.Label(["Hauteur (bpm)", dcc.Input(id="prominence",
+                                                                    type="number"),]), className="col-sm-3"),
+                    html.Div(html.Label(["Largeur (s)", dcc.Input(id="width",
+                                                                  type="number")]), className="col-sm-3"),
                 ], className="row no-print"),
                 html.Div([
                     html.Div(html.P("Taille de la zone à enlever : "),
                          className="col-sm-4"),
                 ], className="row no-print"),
                 html.Div([
-                    html.Label(["Retirer à gauche", dcc.Input(
-                        id="removed_width_left", type="number")], className="col-sm-2"),
-                    html.Label(["Retirer à droite", dcc.Input(
-                        id="removed_width_right", type="number")], className="col-sm-2"),
-                    html.Div("", className="col-sm-5"),
+                    html.Label(["Retirer à gauche (s)", dcc.Input(
+                        id="removed_width_left", type="number")], className="col-sm-3"),
+                    html.Label(["Retirer à droite (s)", dcc.Input(
+                        id="removed_width_right", type="number")], className="col-sm-3"),
+                    html.Div("", className="col-sm-3"),
                     html.Button(html.B("5.Filtrer les données"), className="contrast outline col-sm-3",
                                 id="filter-selection-button", n_clicks=0)
                 ], className="row no-print"),
