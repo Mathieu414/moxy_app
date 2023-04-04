@@ -1,7 +1,8 @@
 import base64
 import io
 import dash_labs as dl
-from dash_extensions.enrich import Output, Input, State, Trigger, callback, html, dcc, DashBlueprint
+from dash_extensions.enrich import Output, Input, State, Trigger, callback, html, dcc, DashBlueprint, ServersideOutput
+
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
@@ -86,7 +87,7 @@ def seance_page():
         ])
 
     @callback(
-        Output('file-data', 'data'),
+        ServersideOutput('file-data', 'data'),
         Input('training-upload', 'contents'),
         prevent_initial_call=True
     )
@@ -105,7 +106,7 @@ def seance_page():
         data["Date"] = pd.to_datetime(
             str(year) + "-" + data["mm-dd"] + "-" + data["hh:mm:ss"], format="%Y-%m-%d-%H:%M:%S")
 
-        return data.to_json()
+        return data
 
     @callback(
         Output('session-filter', 'options'),
@@ -113,7 +114,6 @@ def seance_page():
         Input('file-data', 'data'))
     def update_dropdown(data):
         if data:
-            data = pd.read_json(data)
             options = [{"label": session, "value": session}
                        for session in np.sort(data["Session Ct"].unique())]
             return options, data["Session Ct"][0]
@@ -125,7 +125,6 @@ def seance_page():
         Input("session-filter", "value"),
         State('file-data', 'data'))
     def update_charts(session, data):
-        data = pd.read_json(data)
         mask = (
             (data["Session Ct"] == session)
         )
@@ -147,7 +146,6 @@ def seance_page():
         State('file-data', 'data'),
         prevent_initial_call=True)
     def display(selectedData, data):
-        data = pd.read_json(data)
         selected_dates = []
         if selectedData and selectedData['points']:
             for point in selectedData["points"]:

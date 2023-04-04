@@ -19,7 +19,7 @@ def get_threshold_callbacks(page, debug=True):
         if debug:
             print("--check_thresholds--")
             print(seuils)
-        if (data is not None) and (value is not None) and ("HR[bpm]" in pd.read_json(data[value][0]).columns):
+        if (data is not None) and (value is not None) and ("HR[bpm]" in data[value][0].columns):
             seuils = seuils[value]
             if debug:
                 print("threshold enabled")

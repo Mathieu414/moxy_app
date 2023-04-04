@@ -23,8 +23,6 @@ def get_div_callbacks(page, debug=True):
 
         if (value is not None) and (data is not None):
             if len(data[value]) >= 4:
-                for n in range(len(data[value][3])):
-                    data[value][3][n] = pd.read_json(data[value][3][n])
                 data_filtered = pd.concat(data[value][3])
                 if "HR[bpm]" in data_filtered.columns:
                     children = [
@@ -96,7 +94,7 @@ def get_div_callbacks(page, debug=True):
     def error_filter(n_clicks, stored_data, value, prominence, width):
         if value is not None:
             if len(stored_data[value]) >= 3:
-                data_selected = pd.read_json(stored_data[value][2])
+                data_selected = stored_data[value][2]
                 message = None
                 (result, message) = fc.cut_peaks(
                     data_selected, prominence=prominence, width=width)

@@ -38,8 +38,6 @@ s_page = seance_page()
 s_page.register(app, "Seance", prefix="1")
 t_page.register(app, "Test", prefix="2")
 
-print(dash.page_registry)
-
 
 def nav():
     nav = html.Nav(
