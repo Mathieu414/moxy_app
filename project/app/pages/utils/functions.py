@@ -3,8 +3,7 @@ import numpy as np
 
 import base64
 import io
-from dash import html
-import re
+from dash_extensions.enrich import html
 from scipy.signal import find_peaks
 from dtw import *
 from scipy import optimize

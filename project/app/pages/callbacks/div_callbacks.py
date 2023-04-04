@@ -1,4 +1,4 @@
-from dash import html, dcc, Input, Output, callback, State, dash_table
+from dash_extensions.enrich import html, dcc, Input, Output, callback, State, dash_table
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.graph_objects as go
@@ -8,8 +8,8 @@ import datetime
 import plotly.io as pio
 
 
-def get_div_callbacks(debug=True):
-    @callback(
+def get_div_callbacks(page, debug=True):
+    @page.callback(
         Output('div-hr', 'children'),
         Input('test-choice', 'value'),
         Input('data-upload', 'data')
@@ -84,7 +84,7 @@ def get_div_callbacks(debug=True):
         else:
             return None
 
-    @ callback(
+    @ page.callback(
         Output('div-error-filter', 'children'),
         Input("filter-selection-button", "n_clicks"),
         [State("data-upload", 'data'),
@@ -114,7 +114,7 @@ def get_div_callbacks(debug=True):
         else:
             return html.P("Pas de test selectionné", className="error")
 
-    @ callback(
+    @ page.callback(
         Output('div-table', "children"),
         Input("analytics", "data"),
         [State('data-upload', 'data'),

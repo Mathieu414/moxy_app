@@ -2,3 +2,5 @@ venv/
 __pycache__/
 *.pyc
 export/
+cache-directory/
+file_system_store/

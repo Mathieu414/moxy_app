@@ -1,13 +1,11 @@
-from dash import Input, Output, State, callback
-from dash.exceptions import PreventUpdate
+from dash_extensions.enrich import Input, Output, callback
 import pandas as pd
-import plotly.io as pio
 import pages.utils.figures as figures
 import plotly.graph_objects as go
 
 
-def get_figure_callbacks(debug=True):
-    @ callback(
+def get_figure_callbacks(page, debug=True):
+    @ page.callback(
         Output('test-chart', 'figure'),
         Input('test-choice', 'value'),
         [Input("seuils", "data"),
@@ -32,7 +30,7 @@ def get_figure_callbacks(debug=True):
         else:
             return go.Figure()
 
-    @ callback(
+    @ page.callback(
         Output('test-zoom-chart', 'figure'),
         Input('test-choice', 'value'),
         Input('data-upload', 'data')
@@ -50,7 +48,7 @@ def get_figure_callbacks(debug=True):
                     [data[value][2], data[value][1][0]])
         return fig
 
-    @ callback(
+    @ page.callback(
         Output('test-filter-chart', 'figure'),
         Input('test-choice', 'value'),
         Input('data-upload', 'data')
@@ -67,7 +65,7 @@ def get_figure_callbacks(debug=True):
                     [data[value][3], data[value][1]])
         return fig
 
-    @ callback(
+    @ page.callback(
         Output('vo2-chart', 'figure'),
         Input('test-choice', 'value'),
         Input('data-upload', 'data')

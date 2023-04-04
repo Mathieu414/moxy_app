@@ -1,4 +1,4 @@
-from dash import Input, Output, State, callback, ctx, no_update, MATCH, ALL
+from dash_extensions.enrich import Input, Output, State, callback, ctx, no_update, MATCH, ALL, ServersideOutput, Trigger
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
@@ -6,16 +6,15 @@ from scipy import signal
 import pages.utils.functions as fc
 import pages.utils.read_xml as read_xml
 import plotly.io as pio
-import darkdetect
 import re
 
 import base64
 import io
 
 
-def get_store_callbacks(debug=True):
-    @callback(
-        [Output('data-upload', 'data'),
+def get_store_callbacks(page, debug=True):
+    @page.callback(
+        [ServersideOutput('data-upload', 'data'),
          Output('seuils', 'data'),
          Output("peaks-parameters", "data")],
 
@@ -43,7 +42,7 @@ def get_store_callbacks(debug=True):
         prevent_initial_call=True,
     )
     def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, vo2_data, modal_button, modal_values, pdf_button, re_render,
-                    stored_data, stored_seuils, prominence, width, removed_width_left, removed_width_right, stored_peaks_param):
+                    stored_data: list, stored_seuils: list, prominence, width, removed_width_left, removed_width_right, stored_peaks_param: list):
         """
         function to modify the data in the data-upload Store component.
 
@@ -290,7 +289,7 @@ def get_store_callbacks(debug=True):
                 print("prevent update data_upload")
             raise PreventUpdate
 
-    @callback(
+    @page.callback(
         Output("analytics", "data"),
         Input('test-filter-chart', 'figure'),
         Input("clear-button", "n_clicks"),
@@ -338,7 +337,7 @@ def get_store_callbacks(debug=True):
         if (ctx.triggered_id == "clear-button"):
             return None
 
-    @callback(
+    @page.callback(
         Output("vo2-data", "data"),
         [Input("vo2-upload", "contents"),
          Input("clear-button", "n_clicks"),],
