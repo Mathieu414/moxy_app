@@ -3,11 +3,11 @@ import numpy as np
 
 import base64
 import io
-from dash import html
-import re
+from dash_extensions.enrich import html
 from scipy.signal import find_peaks
 from dtw import *
 from scipy import optimize
+import re
 
 
 def df_find_peaks(df, prominence=8, width=20):
@@ -37,6 +37,7 @@ def cut_peaks(df, range_right=20, range_left=20, prominence=8, width=20):
             with the corresponding success or error message
     """
     print("--cut_peaks--")
+    df = df.copy(deep=True)
     peaks = df_find_peaks(df["HR[bpm]"], prominence, width)
     print(peaks)
     if len(peaks) > 0:
@@ -68,6 +69,7 @@ def parse_data(content, filename):
     Returns:
         str: content of the file
     """
+    print("--parse_data--")
     content_type, content_string = content.split(",")
     decoded = base64.b64decode(content_string)
     try:
@@ -97,6 +99,7 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
     if 'VO2' in moxy_data.columns:
         moxy_data = moxy_data.drop(['VO2', 'FC'], axis=1)
     print(moxy_data.columns)
+    print(vo2_df)
     # transform the time into seconds
     vo2_df['Temps'] = (pd.to_datetime(
         vo2_df['Temps']) - pd.to_datetime(
@@ -108,7 +111,10 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
         vo2_df["Fréquence cardiaque"], errors='coerce')
     # dataframe to numpy
     x = vo2_df["Fréquence cardiaque"].to_numpy()
-    y = moxy_data["HR[bpm]"].to_numpy()
+    print(type(x[0]))
+    y = moxy_data["HR[bpm]"].to_numpy().astype(int)
+    print(type(y[0]))
+    print(dtw(x, y))
     # using the dtw library to match the datasets
     alignment = warp(dtw(x, y), index_reference=True)
     print(alignment)
@@ -239,3 +245,15 @@ def find_thresholds(seuil: int, df_filtered: list, muscle_groups: list, threshol
                 # the first occurence is the relevant one, no need to go further
                 break
     return threshold_muscle
+
+
+def PrefixReverse(id: str):
+    """Removes the prefix added before the id of the component
+
+    Args:
+        id (str): string representing the id of the component
+
+    Returns:
+        str: id of the component without the prefix
+    """
+    return re.sub('^\w-', '', id)

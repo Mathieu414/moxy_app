@@ -1,4 +1,4 @@
-from dash import html, dcc, Input, Output, callback, State, dash_table
+from dash_extensions.enrich import html, dcc, Input, Output, callback, State, dash_table
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.graph_objects as go
@@ -8,8 +8,8 @@ import datetime
 import plotly.io as pio
 
 
-def get_div_callbacks(debug=True):
-    @callback(
+def get_div_callbacks(page, debug=True):
+    @page.callback(
         Output('div-hr', 'children'),
         Input('test-choice', 'value'),
         Input('data-upload', 'data')
@@ -23,8 +23,6 @@ def get_div_callbacks(debug=True):
 
         if (value is not None) and (data is not None):
             if len(data[value]) >= 4:
-                for n in range(len(data[value][3])):
-                    data[value][3][n] = pd.read_json(data[value][3][n])
                 data_filtered = pd.concat(data[value][3])
                 if "HR[bpm]" in data_filtered.columns:
                     children = [
@@ -84,7 +82,7 @@ def get_div_callbacks(debug=True):
         else:
             return None
 
-    @ callback(
+    @ page.callback(
         Output('div-error-filter', 'children'),
         Input("filter-selection-button", "n_clicks"),
         [State("data-upload", 'data'),
@@ -96,7 +94,7 @@ def get_div_callbacks(debug=True):
     def error_filter(n_clicks, stored_data, value, prominence, width):
         if value is not None:
             if len(stored_data[value]) >= 3:
-                data_selected = pd.read_json(stored_data[value][2])
+                data_selected = stored_data[value][2]
                 message = None
                 (result, message) = fc.cut_peaks(
                     data_selected, prominence=prominence, width=width)
@@ -114,7 +112,7 @@ def get_div_callbacks(debug=True):
         else:
             return html.P("Pas de test selectionné", className="error")
 
-    @ callback(
+    @ page.callback(
         Output('div-table', "children"),
         Input("analytics", "data"),
         [State('data-upload', 'data'),

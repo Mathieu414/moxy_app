@@ -1,9 +1,9 @@
-from dash import Input, Output, State, callback, no_update
+from dash_extensions.enrich import Input, Output, State, callback
 from dash.exceptions import PreventUpdate
 
 
-def get_p_callbacks(debug=True):
-    @callback(
+def get_p_callbacks(page, debug=True):
+    @page.callback(
         [Output("vo2_p", "children"),
          Output("vo2_p", "className")],
         Input("test-choice", 'value'),

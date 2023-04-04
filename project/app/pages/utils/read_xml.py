@@ -1,6 +1,5 @@
 import pandas as pd
 import xml.etree.cElementTree as ET
-import re
 
 
 def getvalueofnode(node):

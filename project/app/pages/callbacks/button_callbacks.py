@@ -1,31 +1,31 @@
 from pages.utils.toPdf.toLatex import generateLatex
-from dash import Input, Output, State, callback, ClientsideFunction, clientside_callback
+from dash_extensions.enrich import Input, Output, State, callback, ClientsideFunction, clientside_callback
 from dash.exceptions import PreventUpdate
 import time
 
 
-def get_button_callbacks(debug=True):
-    @callback([Output('vo2_button', 'disabled'),
-              Output('vo2_button', 'className')],
-              Input("test-choice", 'value')
-              )
+def get_button_callbacks(page, debug=True):
+    @page.callback([Output('vo2_button', 'disabled'),
+                    Output('vo2_button', 'className')],
+                   Input("test-choice", 'value')
+                   )
     def set_button_enabled_state(value):
         if value is not None:
             return [False, ""]
         else:
             return [True, "secondary outline"]
 
-    @callback([Output('modal_open', 'disabled'),
-              Output('modal_open', 'className')],
-              Input("test-choice", 'value')
-              )
+    @page.callback([Output('modal_open', 'disabled'),
+                    Output('modal_open', 'className')],
+                   Input("test-choice", 'value')
+                   )
     def set_button_enabled_state(value):
         if value is not None:
             return [False, ""]
         else:
             return [True, "secondary outline"]
 
-    @callback(
+    @page.callback(
         Output('render', 'n_clicks'),
         Input('div-hr', 'children'),
         State('print-pdf', 'n_clicks'),
@@ -62,7 +62,7 @@ def get_button_callbacks(debug=True):
     )
 
     """
-        @callback(
+        @page.callback(
         Output('print-pdf', 'disabled'),
         Input('print-pdf', 'n_clicks'),
         State('test-zoom-chart', 'figure'),

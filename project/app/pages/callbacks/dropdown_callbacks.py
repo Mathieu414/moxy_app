@@ -1,9 +1,9 @@
-from dash import Input, Output, State, callback
+from dash_extensions.enrich import Input, Output, State, callback
 from dash.exceptions import PreventUpdate
 
 
-def get_dropdown_callbacks(debug=True):
-    @ callback(
+def get_dropdown_callbacks(page, debug=True):
+    @page.callback(
         Output('test-choice', 'options'),
         Input('data-upload', 'data'),
         State('test-choice', 'options')
@@ -30,7 +30,7 @@ def get_dropdown_callbacks(debug=True):
         else:
             raise PreventUpdate
 
-    @ callback(
+    @page.callback(
         Output('test-choice', 'value'),
         Input("clear-button", "n_clicks"),
     )

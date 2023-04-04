@@ -1,4 +1,4 @@
-from dash import Input, Output, State, callback, ctx, no_update, MATCH, ALL
+from dash_extensions.enrich import Input, Output, State, ctx, no_update, ALL, ServersideOutput
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
@@ -6,16 +6,14 @@ from scipy import signal
 import pages.utils.functions as fc
 import pages.utils.read_xml as read_xml
 import plotly.io as pio
-import darkdetect
 import re
 
 import base64
-import io
 
 
-def get_store_callbacks(debug=True):
-    @callback(
-        [Output('data-upload', 'data'),
+def get_store_callbacks(page, debug=True):
+    @page.callback(
+        [ServersideOutput('data-upload', 'data'),
          Output('seuils', 'data'),
          Output("peaks-parameters", "data")],
 
@@ -43,7 +41,7 @@ def get_store_callbacks(debug=True):
         prevent_initial_call=True,
     )
     def data_upload(contents, filenames, seuil1, seuil2, clear_button, value, selectedData, filter_button, vo2_data, modal_button, modal_values, pdf_button, re_render,
-                    stored_data, stored_seuils, prominence, width, removed_width_left, removed_width_right, stored_peaks_param):
+                    stored_data: list, stored_seuils: list, prominence, width, removed_width_left, removed_width_right, stored_peaks_param: list):
         """
         function to modify the data in the data-upload Store component.
 
@@ -61,10 +59,16 @@ def get_store_callbacks(debug=True):
         """
         pio.templates.default = "plotly_dark_custom"
 
+        trigg_id = fc.PrefixReverse(ctx.triggered_id)
+
         if debug:
             print("--data-upload--")
+            print(trigg_id)
+            print(ctx.triggered_id)
 
-        if (ctx.triggered_id == "test-data-upload") and (('DataAverage.xlsx' in filenames) or ('DataAverage.csv' in filenames)):
+        if (trigg_id == "test-data-upload") and (('DataAverage.xlsx' in filenames) or ('DataAverage.csv' in filenames)):
+
+            print("test-data-upload")
 
             data = []
             data.append(fc.parse_data(contents, filenames))
@@ -98,7 +102,7 @@ def get_store_callbacks(debug=True):
                     data[0]["HR[bpm]"], 40, 4)
                 new_seuils = [None, None]
 
-            data[0] = data[0].to_json()
+            data[0] = data[0]
             if stored_data:
                 stored_data.append([data[0], data[1]])
                 stored_seuils.append(new_seuils)
@@ -108,13 +112,12 @@ def get_store_callbacks(debug=True):
                 return [[[data[0], data[1]]], [new_seuils], [[8, 20, 20, 20]]]
 
         # if the element triggered is the modal
-        if (ctx.triggered_id == "modal_close"):
+        if (trigg_id == "modal_close"):
             # change the column names of the base data
             col_names = dict(zip(stored_data[value][1][0], modal_values))
-            stored_data[value][0] = pd.read_json(
-                stored_data[value][0])
+            stored_data[value][0] = stored_data[value][0]
             stored_data[value][0].rename(columns=col_names, inplace=True)
-            stored_data[value][0] = stored_data[value][0].to_json()
+            stored_data[value][0] = stored_data[value][0]
 
             # change the muscle names list
             for i, n in enumerate(modal_values):
@@ -122,19 +125,17 @@ def get_store_callbacks(debug=True):
 
             # change the selected data column names
             if len(stored_data[value]) >= 3:
-                stored_data[value][2] = pd.read_json(
-                    stored_data[value][2])
+                stored_data[value][2] = stored_data[value][2]
                 stored_data[value][2].rename(columns=col_names, inplace=True)
-                stored_data[value][2] = stored_data[value][2].to_json()
+                stored_data[value][2] = stored_data[value][2]
 
             # change the filtered data column names
             if len(stored_data[value]) >= 4:
                 for i, n in enumerate(stored_data[value][3]):
-                    stored_data[value][3][i] = pd.read_json(
-                        stored_data[value][3][i])
+                    stored_data[value][3][i] = stored_data[value][3][i]
                     stored_data[value][3][i].rename(
                         columns=col_names, inplace=True)
-                    stored_data[value][3][i] = stored_data[value][3][i].to_json()
+                    stored_data[value][3][i] = stored_data[value][3][i]
 
             return [stored_data, no_update, no_update]
 
@@ -145,20 +146,20 @@ def get_store_callbacks(debug=True):
             print(seuil2)
 
         # if the triggered element are the thresholds input
-        if (ctx.triggered_id in ["seuil1", "seuil2"]) and (not all(s is None for s in (seuil1, seuil2))):
+        if (trigg_id in ["seuil1", "seuil2"]) and (not all(s is None for s in (seuil1, seuil2))):
             if debug:
                 print("Seuil 1 or Seuil 2 are trigered and are not None")
-            df = pd.read_json(stored_data[value][0])
+            df = stored_data[value][0]
             df_selected = None
             df_filtered = None
             # Read the stored selected data
             if len(stored_data[value]) >= 3:
-                df_selected = pd.read_json(stored_data[value][2])
+                df_selected = stored_data[value][2]
             # read the stored filtered data
             if len(stored_data[value]) >= 4:
                 df_filtered = stored_data[value][3]
                 for n in range(len(df_filtered)):
-                    df_filtered[n] = pd.read_json(df_filtered[n])
+                    df_filtered[n] = df_filtered[n]
 
             def set_seuils(seuil, df, df_selected, df_filtered, name):
                 if (seuil is not None) and (seuil != 0):
@@ -184,88 +185,81 @@ def get_store_callbacks(debug=True):
             df, df_selected, df_filtered = set_seuils(
                 seuil2, df, df_selected, df_filtered, "Seuil 2")
 
-            df = df.to_json()
+            df = df
             stored_data[value][0] = df
 
             if df_selected is not None:
-                df_selected = df_selected.to_json()
+                df_selected = df_selected
                 stored_data[value][2] = df_selected
             if df_filtered is not None:
-                for n in range(len(df_filtered)):
-                    df_filtered[n] = df_filtered[n].to_json()
                 stored_data[value][3] = df_filtered
 
             stored_seuils[value] = [seuil1, seuil2]
             return [stored_data, stored_seuils, no_update]
 
-        if (ctx.triggered_id == "clear-button") and (clear_button > 0):
+        if (trigg_id == "clear-button") and (clear_button > 0):
             if debug:
                 print("Clearing data")
             stored_data = None
             return [stored_data, None, None]
 
-        if ctx.triggered_id == "test-chart":
+        if trigg_id == "test-chart":
             if debug:
                 print("Storing data selection")
+                print(bool(vo2_data))
             if selectedData and selectedData['points']:
-                data_selected = pd.read_json(stored_data[value][0])
+                data_selected = stored_data[value][0]
                 selected_time = []
                 for point in selectedData["points"]:
                     selected_time.append(point['x'])
                 data_selected = data_selected.query(
                     "`Time[s]` == @selected_time")
                 if vo2_data:
-                    if str(value) in vo2_data.keys():
+                    if value in vo2_data.keys():
                         if debug:
                             print("synchronize vo2")
-                        vo2_df = vo2_data[str(value)]
+                        vo2_df = vo2_data[value]
                         data_selected = fc.synchronise_moxy_vo2(
-                            data_selected, pd.read_json(vo2_df))
+                            data_selected, vo2_df)
                 if len(stored_data[value]) >= 3:
-                    stored_data[value][2] = data_selected.to_json()
+                    stored_data[value][2] = data_selected
                 else:
-                    stored_data[value].append(data_selected.to_json())
+                    stored_data[value].append(data_selected)
                 return [stored_data, no_update, no_update]
 
         # case if the vo2 data is uploaded after the data has been selected
-        if (ctx.triggered_id == "vo2-data") and (len(stored_data[value]) >= 3):
+        if (trigg_id == "vo2-data") and (len(stored_data[value]) >= 3):
+            print(vo2_data)
             if value is not None:
                 if vo2_data:
-                    data_selected = pd.read_json(stored_data[value][2])
-                    if vo2_data[str(value)]:
+                    data_selected = stored_data[value][2]
+                    if vo2_data[value] is not None:
                         if debug:
                             print("synchronize vo2")
-                        vo2_df = vo2_data[str(value)]
+                        vo2_df = vo2_data[value]
                         data_selected = fc.synchronise_moxy_vo2(
-                            data_selected, pd.read_json(vo2_df))
-                        stored_data[value][2] = data_selected.to_json()
+                            data_selected, vo2_df)
+                        stored_data[value][2] = data_selected
 
                         # If there is already filtered data, then recompute it with the vo2 data
                         if len(stored_data[value]) >= 4:
                             list_data_filtered = fc.cut_peaks(
                                 data_selected, prominence=prominence, width=width, range_left=removed_width_left, range_right=removed_width_right)[0]
 
-                            for n in range(len(list_data_filtered)):
-                                list_data_filtered[n] = list_data_filtered[n].to_json(
-                                )
-
                             stored_data[value][3] = list_data_filtered
 
                         return [stored_data, no_update, no_update]
 
-        if (ctx.triggered_id == "filter-selection-button"):
+        if (trigg_id == "filter-selection-button"):
             if debug:
                 print("--filter_selection--")
             if value is not None:
                 if len(stored_data[value]) >= 3:
                     if debug:
                         print("data selection is not empty")
-                    data_selected = pd.read_json(stored_data[value][2])
+                    data_selected = stored_data[value][2]
                     list_data_filtered = fc.cut_peaks(
                         data_selected, prominence=prominence, width=width, range_left=removed_width_left, range_right=removed_width_right)[0]
-
-                    for n in range(len(list_data_filtered)):
-                        list_data_filtered[n] = list_data_filtered[n].to_json()
 
                     if len(stored_data[value]) >= 4:
                         stored_data[value][3] = list_data_filtered
@@ -280,7 +274,7 @@ def get_store_callbacks(debug=True):
             else:
                 raise PreventUpdate
 
-        if (ctx.triggered_id == "print-pdf") and (value is not None):
+        if (trigg_id == "print-pdf") and (value is not None):
             print("print pdf")
             pio.templates.default = "plotly_white"
             return [stored_data, no_update, no_update]
@@ -290,7 +284,7 @@ def get_store_callbacks(debug=True):
                 print("prevent update data_upload")
             raise PreventUpdate
 
-    @callback(
+    @page.callback(
         Output("analytics", "data"),
         Input('test-filter-chart', 'figure'),
         Input("clear-button", "n_clicks"),
@@ -300,15 +294,14 @@ def get_store_callbacks(debug=True):
         prevent_initial_call=True
     )
     def compute_muscular_thresholds(fig, clear_button, stored_data, value, seuils):
+        trigg_id = fc.PrefixReverse(ctx.triggered_id)
         if debug:
             print("--compute_muscular_thresholds--")
             print(seuils)
-        if (ctx.triggered_id == "test-filter-chart"):
+        if (trigg_id == "test-filter-chart"):
             if "data" in fig.keys() and fig["data"]:
                 analytics = [[], [], []]
                 df_filtered = stored_data[value][3]
-                for n in range(len(df_filtered)):
-                    df_filtered[n] = pd.read_json(df_filtered[n])
                 # check if there is any thresholds in store
                 if seuils[value] != [0, 0] and seuils[value] != [None, None]:
                     print("seuils are not None")
@@ -335,11 +328,11 @@ def get_store_callbacks(debug=True):
                 return analytics
             else:
                 return None
-        if (ctx.triggered_id == "clear-button"):
+        if (trigg_id == "clear-button"):
             return None
 
-    @callback(
-        Output("vo2-data", "data"),
+    @page.callback(
+        ServersideOutput("vo2-data", "data"),
         [Input("vo2-upload", "contents"),
          Input("clear-button", "n_clicks"),],
         State("test-choice", 'value'),
@@ -347,19 +340,20 @@ def get_store_callbacks(debug=True):
         prevent_initial_call=True
     )
     def store_xml(content, clear_button, value, stored_content):
+        trigg_id = fc.PrefixReverse(ctx.triggered_id)
         if debug:
             print('--store_xml--')
-        if (ctx.triggered_id == "vo2-upload"):
+        if (trigg_id == "vo2-upload"):
             if content:
                 content_type, content_string = content.split(",")
                 decoded = base64.b64decode(content_string)
                 df = read_xml.parse_xml(decoded)
                 if stored_content:
-                    stored_content[value] = df.to_json()
+                    stored_content[value] = df
                     return stored_content
                 else:
-                    return {value: df.to_json()}
+                    return {value: df}
             else:
                 raise PreventUpdate
-        if (ctx.triggered_id == "clear-button"):
+        if (trigg_id == "clear-button"):
             return None

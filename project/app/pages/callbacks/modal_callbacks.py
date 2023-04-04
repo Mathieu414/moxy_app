@@ -1,9 +1,9 @@
-from dash import Input, Output, State, callback, no_update, html, dcc
+from dash_extensions.enrich import Input, Output, State, callback, html, dcc
 from dash.exceptions import PreventUpdate
 
 
-def get_modal_callbacks(debug=True):
-    @callback(
+def get_modal_callbacks(page, debug=True):
+    @page.callback(
         Output("modal", "open"),
         [Input("modal_open", "n_clicks"), Input("modal_close",
                                                 "n_clicks"), Input("modal_abort", "n_clicks")],
@@ -14,7 +14,7 @@ def get_modal_callbacks(debug=True):
             return not open
         return open
 
-    @callback(
+    @page.callback(
         Output("modal_content", "children"),
         [Input("data-upload", "data"), Input("test-choice", 'value')],
     )

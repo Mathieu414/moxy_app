@@ -1,9 +1,9 @@
-from dash import Input, Output, State, callback
+from dash_extensions.enrich import Input, Output, State, callback
 import pandas as pd
 
 
-def get_threshold_callbacks(debug=True):
-    @ callback(
+def get_threshold_callbacks(page, debug=True):
+    @ page.callback(
         [Output('seuil1-p', 'value'),
          Output('seuil2-p', 'value'),
          Output('seuil1', 'disabled'),
@@ -19,7 +19,7 @@ def get_threshold_callbacks(debug=True):
         if debug:
             print("--check_thresholds--")
             print(seuils)
-        if (data is not None) and (value is not None) and ("HR[bpm]" in pd.read_json(data[value][0]).columns):
+        if (data is not None) and (value is not None) and ("HR[bpm]" in data[value][0].columns):
             seuils = seuils[value]
             if debug:
                 print("threshold enabled")
@@ -31,13 +31,13 @@ def get_threshold_callbacks(debug=True):
                 print("seuils or value is None")
             return [None, None, True, True, None, None]
 
-    @callback([Output('prominence', 'value'),
-               Output('width', 'value'),
-               Output('removed_width_left', 'value'),
-               Output('removed_width_right', 'value')],
-              Input('test-choice', 'value'),
-              State('peaks-parameters', 'data')
-              )
+    @page.callback([Output('prominence', 'value'),
+                    Output('width', 'value'),
+                    Output('removed_width_left', 'value'),
+                    Output('removed_width_right', 'value')],
+                   Input('test-choice', 'value'),
+                   State('peaks-parameters', 'data')
+                   )
     def set_value_detection_input(value, data):
         if debug:
             print("--set_value_detection_input--")

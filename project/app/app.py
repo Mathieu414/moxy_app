@@ -1,15 +1,18 @@
 from flask import Flask, redirect
+import dash_labs as dl
+from dash_extensions.enrich import DashBlueprint, DashProxy, ServersideOutputTransform, html, Output, Input
 import dash
-from dash import html
-import darkdetect
 import plotly.io as pio
+from flask_caching import Cache
+from pages.analyse_test import test_page
+from pages.analyse_seance import seance_page
 
 server = Flask(__name__)
 
 
 @server.route('/')
 def index_redirect():
-    return redirect('/analyse-test')
+    return redirect('/test')
 
 
 pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
@@ -19,13 +22,21 @@ pio.templates["plotly_dark_custom"]['layout']['dragmode'] = 'select'
 
 pio.templates.default = "plotly_dark_custom"
 
-
-app = dash.Dash(
+app = DashProxy(
     __name__,
     server=server,
-    use_pages=True,
-    suppress_callback_exceptions=True
+    suppress_callback_exceptions=True,
+    transforms=[ServersideOutputTransform()],
+    use_pages=True
 )
+
+
+t_page = test_page()
+s_page = seance_page()
+
+
+s_page.register(app, "Seance", prefix="1")
+t_page.register(app, "Test", prefix="2")
 
 
 def nav():
@@ -36,9 +47,9 @@ def nav():
             ),
             html.Ul([
                 html.Li(
-                    [html.A('Séance',  href=dash.page_registry['pages.analyse_seance']['path'], role="button")]),
+                    [html.A('Séance',  href=dash.page_registry['Seance']['path'], role="button")]),
                 html.Li(
-                    [html.A('Test',  href=dash.page_registry['pages.analyse_test']['path'], role="button")])
+                    [html.A('Test',  href=dash.page_registry['Test']['path'], role="button")])
             ])
         ], className="no-print")
     return nav
