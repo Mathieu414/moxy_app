@@ -1,5 +1,6 @@
-from dash_extensions.enrich import Input, Output, State, ctx, no_update, ALL, ServersideOutput
+from dash_extensions.enrich import Input, Output, State, ctx, no_update, ServersideOutput
 from dash.exceptions import PreventUpdate
+from dash import ALL
 import pandas as pd
 import numpy as np
 from scipy import signal
@@ -59,14 +60,11 @@ def get_store_callbacks(page, debug=True):
         """
         pio.templates.default = "plotly_dark_custom"
 
-        trigg_id = fc.PrefixReverse(ctx.triggered_id)
-
         if debug:
             print("--data-upload--")
-            print(trigg_id)
             print(ctx.triggered_id)
 
-        if (trigg_id == "test-data-upload") and (('DataAverage.xlsx' in filenames) or ('DataAverage.csv' in filenames)):
+        if (ctx.triggered_id == "test-data-upload") and (('DataAverage.xlsx' in filenames) or ('DataAverage.csv' in filenames)):
 
             print("test-data-upload")
 
@@ -112,7 +110,9 @@ def get_store_callbacks(page, debug=True):
                 return [[[data[0], data[1]]], [new_seuils], [[8, 20, 20, 20]]]
 
         # if the element triggered is the modal
-        if (trigg_id == "modal_close"):
+        if (ctx.triggered_id == "modal_close"):
+            print("modal_close")
+            print(modal_values)
             # change the column names of the base data
             col_names = dict(zip(stored_data[value][1][0], modal_values))
             stored_data[value][0] = stored_data[value][0]
@@ -146,7 +146,7 @@ def get_store_callbacks(page, debug=True):
             print(seuil2)
 
         # if the triggered element are the thresholds input
-        if (trigg_id in ["seuil1", "seuil2"]) and (not all(s is None for s in (seuil1, seuil2))):
+        if (ctx.triggered_id in ["seuil1", "seuil2"]) and (not all(s is None for s in (seuil1, seuil2))):
             if debug:
                 print("Seuil 1 or Seuil 2 are trigered and are not None")
             df = stored_data[value][0]
@@ -197,13 +197,13 @@ def get_store_callbacks(page, debug=True):
             stored_seuils[value] = [seuil1, seuil2]
             return [stored_data, stored_seuils, no_update]
 
-        if (trigg_id == "clear-button") and (clear_button > 0):
+        if (ctx.triggered_id == "clear-button") and (clear_button > 0):
             if debug:
                 print("Clearing data")
             stored_data = None
             return [stored_data, None, None]
 
-        if trigg_id == "test-chart":
+        if ctx.triggered_id == "test-chart":
             if debug:
                 print("Storing data selection")
                 print(bool(vo2_data))
@@ -228,7 +228,7 @@ def get_store_callbacks(page, debug=True):
                 return [stored_data, no_update, no_update]
 
         # case if the vo2 data is uploaded after the data has been selected
-        if (trigg_id == "vo2-data") and (len(stored_data[value]) >= 3):
+        if (ctx.triggered_id == "vo2-data") and (len(stored_data[value]) >= 3):
             print(vo2_data)
             if value is not None:
                 if vo2_data:
@@ -250,7 +250,7 @@ def get_store_callbacks(page, debug=True):
 
                         return [stored_data, no_update, no_update]
 
-        if (trigg_id == "filter-selection-button"):
+        if (ctx.triggered_id == "filter-selection-button"):
             if debug:
                 print("--filter_selection--")
             if value is not None:
@@ -274,7 +274,7 @@ def get_store_callbacks(page, debug=True):
             else:
                 raise PreventUpdate
 
-        if (trigg_id == "print-pdf") and (value is not None):
+        if (ctx.triggered_id == "print-pdf") and (value is not None):
             print("print pdf")
             pio.templates.default = "plotly_white"
             return [stored_data, no_update, no_update]
@@ -294,11 +294,10 @@ def get_store_callbacks(page, debug=True):
         prevent_initial_call=True
     )
     def compute_muscular_thresholds(fig, clear_button, stored_data, value, seuils):
-        trigg_id = fc.PrefixReverse(ctx.triggered_id)
         if debug:
             print("--compute_muscular_thresholds--")
             print(seuils)
-        if (trigg_id == "test-filter-chart"):
+        if (ctx.triggered_id == "test-filter-chart"):
             if "data" in fig.keys() and fig["data"]:
                 analytics = [[], [], []]
                 df_filtered = stored_data[value][3]
@@ -328,7 +327,7 @@ def get_store_callbacks(page, debug=True):
                 return analytics
             else:
                 return None
-        if (trigg_id == "clear-button"):
+        if (ctx.triggered_id == "clear-button"):
             return None
 
     @page.callback(
@@ -340,10 +339,9 @@ def get_store_callbacks(page, debug=True):
         prevent_initial_call=True
     )
     def store_xml(content, clear_button, value, stored_content):
-        trigg_id = fc.PrefixReverse(ctx.triggered_id)
         if debug:
             print('--store_xml--')
-        if (trigg_id == "vo2-upload"):
+        if (ctx.triggered_id == "vo2-upload"):
             if content:
                 content_type, content_string = content.split(",")
                 decoded = base64.b64decode(content_string)
@@ -355,5 +353,5 @@ def get_store_callbacks(page, debug=True):
                     return {value: df}
             else:
                 raise PreventUpdate
-        if (trigg_id == "clear-button"):
+        if (ctx.triggered_id == "clear-button"):
             return None

@@ -35,8 +35,8 @@ t_page = test_page()
 s_page = seance_page()
 
 
-s_page.register(app, "Seance", prefix="1")
-t_page.register(app, "Test", prefix="2")
+s_page.register(app, "Seance")
+t_page.register(app, "Test")
 
 
 def nav():
