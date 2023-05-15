@@ -34,7 +34,6 @@ app = DashProxy(
 t_page = test_page()
 s_page = seance_page()
 
-
 s_page.register(app, "Seance")
 t_page.register(app, "Test")
 

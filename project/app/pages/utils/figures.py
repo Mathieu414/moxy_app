@@ -46,6 +46,8 @@ def create_figure(data):
     fig.update_xaxes(showgrid=False, title="Temps")
     fig.update_yaxes(title_text="Desoxygenation", secondary_y=False)
     fig.update_layout(
+        xaxis=dict(showgrid=True, gridwidth=3),
+        yaxis=dict(showgrid=True, gridwidth=3),
         clickmode='event+select',
         height=500,
         margin=dict(l=20, r=20, t=30, b=20))
@@ -81,6 +83,8 @@ def create_filtered_figure(data):
     fig.update_xaxes(showgrid=False, title="Temps")
     fig.update_yaxes(title_text="Desoxygenation", secondary_y=False)
     fig.update_layout(
+        xaxis=dict(showgrid=True, gridwidth=3),
+        yaxis=dict(showgrid=True, gridwidth=3),
         clickmode='event+select',
         height=500,
         margin=dict(l=20, r=20, t=30, b=20))
@@ -108,5 +112,13 @@ def create_vo2_figure(data):
                                        mode='lines',
                                        name="Tendance",
                                        line=dict(color=colors[i])))
+        fig.update_layout(
+            xaxis=dict(showgrid=True, gridwidth=3),
+            yaxis=dict(showgrid=True, gridwidth=3),
+            xaxis_title='VO2',
+            yaxis_title='Desoxygénation',
+            height=500,
+            margin=dict(l=20, r=20, t=30, b=20)
+        )
 
     return fig
