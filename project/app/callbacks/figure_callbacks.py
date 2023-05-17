@@ -1,15 +1,14 @@
 from dash_extensions.enrich import Input, Output, callback
 import pandas as pd
-import pages.utils.figures as figures
+import utils.figures as figures
 import plotly.graph_objects as go
 
 
 def get_figure_callbacks(page, debug=True):
-    @ page.callback(
-        Output('test-chart', 'figure'),
-        Input('test-choice', 'value'),
-        [Input("seuils", "data"),
-         Input('data-upload', 'data')],
+    @page.callback(
+        Output("test-chart", "figure"),
+        Input("test-choice", "value"),
+        [Input("seuils", "data"), Input("data-upload", "data")],
     )
     def update_graph(value, seuils, data):
         if debug:
@@ -29,10 +28,10 @@ def get_figure_callbacks(page, debug=True):
         else:
             return go.Figure()
 
-    @ page.callback(
-        Output('test-zoom-chart', 'figure'),
-        Input('test-choice', 'value'),
-        Input('data-upload', 'data')
+    @page.callback(
+        Output("test-zoom-chart", "figure"),
+        Input("test-choice", "value"),
+        Input("data-upload", "data"),
     )
     def display_zoomed_data(value, data):
         if debug:
@@ -42,14 +41,13 @@ def get_figure_callbacks(page, debug=True):
             if len(data[value]) >= 3:
                 if debug:
                     print("create zoomed figure")
-                fig = figures.create_figure(
-                    [data[value][2], data[value][1][0]])
+                fig = figures.create_figure([data[value][2], data[value][1][0]])
         return fig
 
-    @ page.callback(
-        Output('test-filter-chart', 'figure'),
-        Input('test-choice', 'value'),
-        Input('data-upload', 'data')
+    @page.callback(
+        Output("test-filter-chart", "figure"),
+        Input("test-choice", "value"),
+        Input("data-upload", "data"),
     )
     def display_filtered_data(value, data):
         fig = go.Figure()
@@ -57,14 +55,13 @@ def get_figure_callbacks(page, debug=True):
             if len(data[value]) >= 4:
                 if debug:
                     print("create filtered figure")
-                fig = figures.create_filtered_figure(
-                    [data[value][3], data[value][1]])
+                fig = figures.create_filtered_figure([data[value][3], data[value][1]])
         return fig
 
-    @ page.callback(
-        Output('vo2-chart', 'figure'),
-        Input('test-choice', 'value'),
-        Input('data-upload', 'data')
+    @page.callback(
+        Output("vo2-chart", "figure"),
+        Input("test-choice", "value"),
+        Input("data-upload", "data"),
     )
     def display_vo2_data(value, data):
         print("--update_vo2_graph--")

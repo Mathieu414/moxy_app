@@ -3,7 +3,7 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.graph_objects as go
 import statsmodels.api as sm
-import pages.utils.functions as fc
+import utils.functions as fc
 import datetime
 import plotly.io as pio
 
@@ -169,27 +169,6 @@ def get_div_callbacks(page, debug=True):
                 print("Fill with minimal values")
                 df["Desoxygénation minimale"] = data[0]
 
-            df2 = pd.DataFrame()
-
-            # fill with the zones data : only do if both tresholds are defined, i.e. if data[2] is full with data
-            if len(data[2]) > 0:
-                if (
-                    (len(data[2][0]) != 0)
-                    and (len(data[2][1]) != 0)
-                    and (len(data[2][2]) != 0)
-                ):
-                    print("Fill with zones values")
-                    df2["Groupes musculaires"] = stored_data[value][1][0]
-                    time = [[] for i in range(len(data[2][0]))]
-                    for i, v in enumerate(data[2]):
-                        if len(v) > 0:
-                            converts = []
-                            for j, t in enumerate(v):
-                                time[j].append(str(int(t / 10)))
-                                converts.append(str(datetime.timedelta(seconds=t)))
-                            df2["Temps zone " + str(i + 1)] = converts
-                    df2["Graph"] = ["{" + ",".join(l) + "}" for l in time]
-
             df = df.round(1)
 
             content2 = [
@@ -221,52 +200,6 @@ def get_div_callbacks(page, debug=True):
                     style_as_list_view=True,
                 ),
             ]
-            if len(data[2]) > 0:
-                if (
-                    (len(data[2][0]) != 0)
-                    and (len(data[2][1]) != 0)
-                    and (len(data[2][2]) != 0)
-                ):
-                    content2.extend(
-                        [
-                            html.H3(
-                                "Temps dans les zones musculaires", className="center"
-                            ),
-                            dash_table.DataTable(
-                                df2.to_dict("records"),
-                                style_header={
-                                    "backgroundColor": "grey",
-                                    "lineHeight": "50px",
-                                },
-                                style_data={
-                                    "backgroundColor": "#141e26",
-                                    "lineHeight": "70px",
-                                },
-                                style_cell={
-                                    "textAlign": "center",
-                                    "font-family": "system-ui",
-                                    "color": "white",
-                                    "width": "{}%".format(100 / len(df.columns)),
-                                    "textOverflow": "ellipsis",
-                                    "overflow": "hidden",
-                                },
-                                style_cell_conditional=[
-                                    {
-                                        "if": {"column_id": "Groupes musculaires"},
-                                        "textAlign": "left",
-                                    }
-                                ],
-                                style_data_conditional=[
-                                    {
-                                        "if": {"column_id": "Graph"},
-                                        "font-family": "Sparks-Bar-Wide",
-                                        "font-size": 150,
-                                    }
-                                ],
-                                style_as_list_view=True,
-                            ),
-                        ]
-                    )
 
             content = html.Article(children=content2)
 

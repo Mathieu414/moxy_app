@@ -68,7 +68,7 @@ class DefineColor(UnsafeCommand):
         super().__init__(arguments=arguments)
 
 
-def generateLatex(filtered_fig, vo2_fig, hr_div, reference_data):
+def generateLatex(filtered_fig, vo2_fig, hr_div, reference_data, first_name, last_name):
     print("--generateLatex--")
 
     filtered_fig = go.Figure(filtered_fig)
@@ -82,6 +82,7 @@ def generateLatex(filtered_fig, vo2_fig, hr_div, reference_data):
         print("remove folder")
         shutil.rmtree("export/images", ignore_errors=False, onerror=None)
     os.mkdir("export/images")
+    export_path = os.path.abspath("export/images")
     print("writing image")
     filtered_fig.write_image("export/images/filtered_fig.jpg", width=800, height=500)
     print("filtered image exported !")
@@ -99,16 +100,12 @@ def generateLatex(filtered_fig, vo2_fig, hr_div, reference_data):
             )
         print("hr images exported !")
 
-    filtered_fig_filename = os.path.join(
-        os.path.dirname(__file__), "../../../../../export/images/filtered_fig.jpg"
-    )
-    vo2_fig_filename = os.path.join(
-        os.path.dirname(__file__), "../../../../../export/images/vo2_fig.jpg"
-    )
+    filtered_fig_filename = os.path.join(export_path, "filtered_fig.jpg")
+    vo2_fig_filename = os.path.join(export_path, "vo2_fig.jpg")
     for v in hr_filenames:
-        v = os.path.join(os.path.dirname(__file__), ("../../../../../" + v))
+        v = os.path.join(export_path, v)
 
-    assets_folder = os.path.join(os.path.dirname(__file__), "..\..\..\\assets\\")
+    assets_folder = os.path.join(os.path.dirname(__file__), "..\..\\assets\\")
 
     geometry_options = {
         "head": "60pt",
@@ -150,20 +147,19 @@ def generateLatex(filtered_fig, vo2_fig, hr_div, reference_data):
     doc.preamble.append(header)
     doc.change_document_style("header")
 
-    with doc.create(Tabu("X[l]")) as table_0:
+    with doc.create(Tabu("X[c]")) as table_0:
         infos = MiniPage(width=NoEscape(r"0.95\textwidth"))
         frame = MdFramed(options=mdframed_options)
         frame.append(VerticalSpace("10pt"))
-        frame.append(LargeText("Perrin"))
-        frame.append(NewLine())
-        frame.append(MediumText("Mathieu"))
+        center = Center()
+        center.append(LargeText(last_name + "  "))
+        center.append(MediumText(first_name))
+        frame.append(center)
         frame.append(VerticalSpace("10pt"))
         infos.append(frame)
 
         table_0.add_row([infos])
         table_0.add_empty_row()
-
-    doc.append(VerticalSpace("0pt"))
 
     if reference_data is not None:
         print(reference_data)
@@ -200,15 +196,16 @@ def generateLatex(filtered_fig, vo2_fig, hr_div, reference_data):
                 )
             )
 
-    doc.generate_pdf("header", clean_tex=False, compiler="lualatex")
+    doc.generate_pdf("Rapport", clean_tex=False, compiler="lualatex")
 
 
 def create_data_table(reference_data, data_name, frame_name):
     mini_page = MiniPage(width=NoEscape(r"0.30\textwidth"), pos="t", height="130px")
     frame = MdFramed(options=mdframed_options)
     frame.append(VerticalSpace("10pt"))
-    frame.append(LargeText(frame_name))
-    frame.append(NewLine())
+    with frame.create(Center()) as title:
+        title.append(LargeText(frame_name))
+    frame.append(VerticalSpace("3pt"))
     table = Tabu("X[l] X[c] X[r]")
     names = MiniPage(width=NoEscape(r"0.45\textwidth"), pos="t!", align="l")
     rule = MiniPage(width=NoEscape(r"0.1\textwidth"), pos="t!", align="c")

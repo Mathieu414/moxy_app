@@ -4,3 +4,6 @@ __pycache__/
 export/
 cache-directory/
 file_system_store/
+*.tex
+*.pdf
+.vscode/

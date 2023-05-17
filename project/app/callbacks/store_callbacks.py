@@ -11,8 +11,8 @@ from dash import ALL
 import pandas as pd
 import numpy as np
 from scipy import signal
-import pages.utils.functions as fc
-import pages.utils.read_xml as read_xml
+import utils.functions as fc
+import utils.read_xml as read_xml
 import plotly.io as pio
 import re
 
@@ -39,7 +39,6 @@ def get_store_callbacks(page, debug=True):
             Input("modal_close", "n_clicks"),
             Input({"type": "muscle-input", "index": ALL}, "value"),
             Input("print-pdf", "n_clicks"),
-            Input("re-render", "n_clicks"),
         ],
         [
             State("data-upload", "data"),
@@ -65,7 +64,6 @@ def get_store_callbacks(page, debug=True):
         modal_button,
         modal_values,
         pdf_button,
-        re_render,
         stored_data: list,
         stored_seuils: list,
         prominence,

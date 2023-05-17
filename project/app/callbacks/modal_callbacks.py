@@ -55,14 +55,13 @@ def get_modal_callbacks(page, debug=True):
         Output("modal-print", "open"),
         [
             Input("print-pdf", "n_clicks"),
-            Input("btn-download-pdf", "n_clicks"),
             Input("modal-print-abort", "n_clicks"),
         ],
         [State("modal-print", "open")],
         prevent_initial_call=True,
     )
-    def toggle_modal_print(n1, n2, n3, open):
-        if n1 or n2 or n3:
+    def toggle_modal_print(n1, n2, open):
+        if n1 or n2:
             return not open
         return open
 
