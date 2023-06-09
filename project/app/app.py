@@ -10,7 +10,6 @@ from dash_extensions.enrich import (
 )
 import dash
 import plotly.io as pio
-from flask_caching import Cache
 from pages.analyse_test import test_page
 from pages.analyse_seance import seance_page
 
@@ -27,7 +26,6 @@ pio.templates["plotly_dark_custom"]["layout"]["paper_bgcolor"] = "#141e26"
 pio.templates["plotly_dark_custom"]["layout"]["plot_bgcolor"] = "#141e26"
 pio.templates["plotly_dark_custom"]["layout"]["dragmode"] = "select"
 
-pio.templates.default = "plotly_dark_custom"
 
 app = DashProxy(
     __name__,
@@ -85,4 +83,4 @@ app.layout = html.Main(
 server = app.server
 
 if __name__ == "__main__":
-    app.run_server(port=8050, debug=True)
+    app.run_server(port=8050, debug=True, host="0.0.0.0")

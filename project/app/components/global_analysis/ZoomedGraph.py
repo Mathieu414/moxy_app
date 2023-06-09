@@ -12,6 +12,7 @@ ZoomedGraph = html.Div(
                     )
                 ]
             ),
+            # Only when printing with the browser
             html.Div(
                 [
                     html.H2(
@@ -20,6 +21,7 @@ ZoomedGraph = html.Div(
                     )
                 ]
             ),
+            # Only when printing with the browser
             html.Div(
                 id="p-threshold",
                 children=[
@@ -27,7 +29,7 @@ ZoomedGraph = html.Div(
                         [
                             html.P("Seuil 1"),
                             dcc.Input(
-                                id="seuil1-p",
+                                id="threshold1-p",
                                 type="number",
                                 debounce=True,
                                 disabled=True,
@@ -38,7 +40,7 @@ ZoomedGraph = html.Div(
                         [
                             html.P("Seuil 2"),
                             dcc.Input(
-                                id="seuil2-p",
+                                id="threshold2-p",
                                 type="number",
                                 debounce=True,
                                 disabled=True,
@@ -48,9 +50,37 @@ ZoomedGraph = html.Div(
                 ],
                 className="inline print",
             ),
+            html.Div(
+                id="inputs-threshold",
+                children=[
+                    html.Div(
+                        [
+                            html.P("Seuil 1 (bpm)"),
+                            dcc.Input(
+                                id="threshold1",
+                                type="number",
+                                debounce=True,
+                                disabled=True,
+                            ),
+                        ]
+                    ),
+                    html.Div(
+                        [
+                            html.P("Seuil 2 (bpm)"),
+                            dcc.Input(
+                                id="threshold2",
+                                type="number",
+                                debounce=True,
+                                disabled=True,
+                            ),
+                        ]
+                    ),
+                ],
+                className="grid",
+            ),
             dcc.Loading(
                 dcc.Graph(
-                    id="test-zoom-chart",
+                    id="test-selected-chart",
                 )
             ),
             html.Hr(),

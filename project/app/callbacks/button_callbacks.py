@@ -8,6 +8,7 @@ from dash_extensions.enrich import (
     clientside_callback,
     dcc,
     ctx,
+    no_update,
 )
 from dash.exceptions import PreventUpdate
 import dash
@@ -80,3 +81,53 @@ def get_button_callbacks(page, debug=True):
         if ctx.triggered_id == "modal-print" and open == False:
             print("refresh")
             return "/"
+
+    @page.callback(
+        Output("global-analysis-div", "className"),
+        Output("local-analysis-div", "className"),
+        Input("global-analysis-button", "n_clicks"),
+        Input("local-analysis-button", "n_clicks"),
+        Input("test-choice", "value"),
+        State("test-chart", "selectedData"),
+        State("analysis-type", "data"),
+        State("selected-data", "data"),
+        State("trend-data", "data"),
+        prevent_initial_call=True,
+    )
+    def display_div(
+        g,
+        l,
+        value,
+        selected_data,
+        analysis_type,
+        stored_selected_data,
+        stored_trend_data,
+    ):
+        if debug:
+            print("--display-div--")
+            print(analysis_type)
+            print(ctx.triggered_id)
+        if ctx.triggered_id == "global-analysis-button":
+            if selected_data is not None or (
+                stored_selected_data is not None and value in stored_selected_data
+            ):
+                return "", "hide"
+            else:
+                return no_update, no_update
+        if ctx.triggered_id == "local-analysis-button":
+            if selected_data is not None or (
+                stored_trend_data is not None and value in stored_trend_data
+            ):
+                return "hide", ""
+            else:
+                return no_update, no_update
+        if ctx.triggered_id == "test-choice":
+            if analysis_type is not None and str(value) in analysis_type:
+                if analysis_type[str(value)] == "global-analysis-button":
+                    return "", "hide"
+                if analysis_type[str(value)] == "local-analysis-button":
+                    return "hide", ""
+            else:
+                return "hide", "hide"
+        else:
+            raise PreventUpdate

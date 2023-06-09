@@ -2,9 +2,7 @@ from dash_extensions.enrich import html, dcc, Input, Output, callback, State, da
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.graph_objects as go
-import statsmodels.api as sm
 import utils.functions as fc
-import datetime
 import plotly.io as pio
 
 
@@ -12,9 +10,12 @@ def get_div_callbacks(page, debug=True):
     @page.callback(
         Output("div-hr", "children"),
         Input("test-choice", "value"),
-        Input("data-upload", "data"),
+        Input("filtered-data", "data"),
+        Input("muscle-groups", "data"),
+        Input("thresholds", "data"),
+        Input("print-pdf", "n_clicks"),
     )
-    def add_hr_graphs(value, data):
+    def add_hr_graphs(value, data, muscle_groups, thresholds, p):
         print("--add-hr-graphs--")
         # For the printing style
         pio.templates["plotly_white"]["data"]["histogram2dcontour"][0]["colorscale"] = (
@@ -25,137 +26,101 @@ def get_div_callbacks(page, debug=True):
             "colorscale"
         ] = ([0, "#141e26"], [1, "#636efa "])
 
-        if (value is not None) and (data is not None):
-            if len(data[value]) >= 4:
-                data_filtered = pd.concat(data[value][3])
-                if "HR[bpm]" in data_filtered.columns:
-                    children = [
-                        html.H2(
-                            "Desoxygénation musculaire en fonction du HR",
-                            className="center",
-                        )
-                    ]
-                    graphs = []
-                    for n in data[value][1][0]:
-                        # remove the nas and convert the df columns to numpy arrays
-                        x_fit = data_filtered["HR[bpm]"].dropna().to_numpy()
-                        y_fit = data_filtered[n].dropna().to_numpy()
+        if (value is not None) and (data is not None) and (data[value] is not None):
+            data_filtered = pd.concat(data[value])
+            if "HR[bpm]" in data_filtered.columns:
+                children = [
+                    html.H2(
+                        "Desoxygénation musculaire en fonction du HR",
+                        className="center",
+                    )
+                ]
+                graphs = []
+                for n in muscle_groups[value][0].keys():
+                    # remove the nas and convert the df columns to numpy arrays
+                    x_fit = data_filtered["HR[bpm]"].dropna().to_numpy()
+                    y_fit = data_filtered[n].dropna().to_numpy()
 
-                        px, py = fc.segments_fit(x_fit, y_fit, 4)
+                    px, py = fc.segments_fit(x_fit, y_fit, 4)
 
-                        fig = go.Figure()
-                        fig.add_trace(
-                            go.Scatter(
-                                x=data_filtered["HR[bpm]"],
-                                y=data_filtered[n],
-                                mode="markers",
-                                showlegend=False,
-                            )
-                        )
-                        fig.add_trace(
-                            go.Scatter(
-                                x=px,
-                                y=py,
-                                mode="lines+text",
-                                line_color="#ab63fa",
-                                name="Tendance",
-                                text=[round(num, 1) for num in px],
-                                textposition="top right",
-                            )
-                        )
-                        if "Seuil 1" in data_filtered.columns:
-                            fig.add_vline(
-                                x=data_filtered["Seuil 1"].iloc[0],
-                                line_width=3,
-                                line_dash="dash",
-                                line_color="green",
-                                name="Seuil 1",
-                            )
-                        if "Seuil 2" in data_filtered.columns:
-                            fig.add_vline(
-                                x=data_filtered["Seuil 2"].iloc[0],
-                                line_width=3,
-                                line_dash="dash",
-                                line_color="yellow",
-                                name="Seuil 2",
-                            )
-
-                        fig.update_layout(
+                    fig = go.Figure()
+                    fig.add_trace(
+                        go.Scatter(
+                            x=data_filtered["HR[bpm]"],
+                            y=data_filtered[n],
+                            mode="markers",
                             showlegend=False,
-                            xaxis=dict(showgrid=True, gridwidth=3),
-                            yaxis=dict(showgrid=True, gridwidth=3),
-                        )
-                        graphs.append(
-                            html.Div(
-                                [
-                                    html.H4(n, className="center"),
-                                    dcc.Graph(id="hr-" + n, figure=fig),
-                                ],
-                                id="hr-charts-div",
-                            )
-                        )
-                    children.append(
-                        html.Div(
-                            children=graphs,
-                            className="grid-display",
-                            id="hr-graphs-div",
                         )
                     )
-                    content = html.Article(children=children, className="wrapper")
-                    return content
-                else:
-                    raise PreventUpdate
+                    fig.add_trace(
+                        go.Scatter(
+                            x=px,
+                            y=py,
+                            mode="lines+text",
+                            line_color="#ab63fa",
+                            name="Tendance",
+                            text=[round(num, 1) for num in px],
+                            textposition="top right",
+                        )
+                    )
+                    if thresholds[value][0] is not None:
+                        fig.add_vline(
+                            x=thresholds[value][0],
+                            line_width=3,
+                            line_dash="dash",
+                            line_color="green",
+                            name="Seuil 1",
+                        )
+                    if thresholds[value][1] is not None:
+                        fig.add_vline(
+                            x=thresholds[value][1],
+                            line_width=3,
+                            line_dash="dash",
+                            line_color="yellow",
+                            name="Seuil 2",
+                        )
+
+                    fig.update_layout(
+                        showlegend=False,
+                        xaxis=dict(showgrid=True, gridwidth=3),
+                        yaxis=dict(showgrid=True, gridwidth=3),
+                    )
+                    graphs.append(
+                        html.Div(
+                            [
+                                html.H4(n, className="center"),
+                                dcc.Graph(id="hr-" + n, figure=fig),
+                            ],
+                            id="hr-charts-div",
+                        )
+                    )
+                children.append(
+                    html.Div(
+                        children=graphs,
+                        className="grid-display",
+                        id="hr-graphs-div",
+                    )
+                )
+                content = html.Article(children=children, className="wrapper")
+                return content
             else:
                 return None
         else:
             return None
 
     @page.callback(
-        Output("div-error-filter", "children"),
-        Input("filter-selection-button", "n_clicks"),
-        [
-            State("data-upload", "data"),
-            State("test-choice", "value"),
-            State("prominence", "value"),
-            State("width", "value"),
-        ],
-        prevent_initial_call=True,
-    )
-    def error_filter(n_clicks, stored_data, value, prominence, width):
-        if value is not None:
-            if len(stored_data[value]) >= 3:
-                data_selected = stored_data[value][2]
-                message = None
-                (result, message) = fc.cut_peaks(
-                    data_selected, prominence=prominence, width=width
-                )
-                if message is not None:
-                    if len(result) == 1:
-                        return html.P(message, className="error")
-                    if len(result) > 1:
-                        return html.P(message, className="success")
-                    else:
-                        raise PreventUpdate
-                else:
-                    raise PreventUpdate
-            else:
-                return html.P("Pas de données selectionnées", className="error")
-        else:
-            return html.P("Pas de test selectionné", className="error")
-
-    @page.callback(
         Output("div-table", "children"),
         Input("analytics", "data"),
-        [State("data-upload", "data"), State("test-choice", "value")],
+        [State("test-choice", "value"), State("muscle-groups", "data")],
         prevent_initial_call=True,
     )
-    def update_results_table(data, stored_data, value):
+    def update_results_table(data, value, muscle_groups):
         if debug:
             print("--update_results_table--")
             print(data)
         if data is not None:
-            df = pd.DataFrame(index=stored_data[value][1][0])
-            df["Groupes musculaires"] = stored_data[value][1][0]
+            df = pd.DataFrame(index=list(muscle_groups[value][0].values()))
+            df["Groupes musculaires"] = list(muscle_groups[value][0].values())
 
             # fill with the threshold data
             if len(data[1]) > 0:
