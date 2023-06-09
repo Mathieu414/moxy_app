@@ -1,21 +1,34 @@
-from dash_extensions.enrich import DashBlueprint, html, dcc
+from dash_extensions.enrich import (
+    DashBlueprint,
+    html,
+    dcc,
+    callback,
+    Input,
+    Output,
+    ctx,
+)
 import plotly.io as pio
 import plotly.graph_objects as go
 
-from callbacks.store_callbacks import get_store_callbacks
-from callbacks.figure_callbacks import get_figure_callbacks
-from callbacks.dropdown_callbacks import get_dropdown_callbacks
-from callbacks.inputs_callbacks import get_threshold_callbacks
-from callbacks.div_callbacks import get_div_callbacks
-from callbacks.p_callbacks import get_p_callbacks
-from callbacks.button_callbacks import get_button_callbacks
-from callbacks.modal_callbacks import get_modal_callbacks
+from callbacks import (
+    get_store_callbacks,
+    get_figure_callbacks,
+    get_dropdown_callbacks,
+    get_threshold_callbacks,
+    get_div_callbacks,
+    get_p_callbacks,
+    get_button_callbacks,
+    get_modal_callbacks,
+    get_datatable_callbacks,
+)
 
-from components.PrintDialog import PrintDialog
-from components.MuscleGroups import MuscleGroups
-from components.FullGraph import FullGraph
-from components.ZoomedGraph import ZoomedGraph
-from components.FilteredGraph import FilteredGraph
+from components import (
+    PrintDialog,
+    MuscleGroups,
+    FullGraph,
+    GlobalAnalysis,
+    LocalAnalysis,
+)
 
 pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
 pio.templates["plotly_dark_custom"]["layout"]["paper_bgcolor"] = "#141e26"
@@ -36,9 +49,7 @@ def test_page():
             # header
             html.Div(
                 children=[
-                    html.H1(
-                        children="Test VO2",
-                    ),
+                    html.H1(children="Test VO2", id="title"),
                     html.P(
                         children="Application pour analyser les données moxy d'un test VO2",
                     ),
@@ -90,61 +101,43 @@ def test_page():
                 ],
                 className="menu no-print",
             ),
-            html.Div(
-                [FullGraph, ZoomedGraph, FilteredGraph],
-                className="test-graphs-div",
-            ),
-            # pagebreak for browser printing
-            html.Div(className="pagebreak"),
-            # table with informations, vo2 graph
-            html.Div(
-                [
-                    html.Div(id="div-table"),
-                    html.Article(
-                        children=[
-                            html.Div(html.H2("Courbe de la VO2", className="center")),
-                            html.Div(
-                                children=dcc.Loading(
-                                    dcc.Graph(
-                                        id="vo2-chart",
-                                    )
-                                ),
-                                className="card",
-                            ),
-                        ],
-                        className="wrapper",
-                    ),
-                    html.Div(className="pagebreak"),
-                    dcc.Loading(html.Div(id="div-hr"), id="hr-loading"),
-                ],
-            ),
-            html.Button(
-                html.B("Imprimer en PDF"), className="contrast outline", id="print-pdf"
-            ),
+            FullGraph,
+            GlobalAnalysis,
+            LocalAnalysis,
             PrintDialog,
             html.Button(className="hide", id="render", n_clicks=0),
             # dcc.Store stores the file data
             dcc.Loading(
-                dcc.Store(id="data-upload", storage_type="session"),
+                dcc.Store(id="raw-data", storage_type="session"),
                 fullscreen=True,
                 style={"backgroundColor": "transparent"},
                 id="loading",
             ),
-            dcc.Store(id="seuils", storage_type="session"),
+            dcc.Store(id="selected-data", storage_type="session"),
+            dcc.Store(id="trend-data", storage_type="session"),
+            dcc.Store(id="filtered-data", storage_type="session"),
+            dcc.Store(id="muscle-groups", storage_type="session"),
+            dcc.Store(id="analysis-type", storage_type="session"),
+            dcc.Store(id="local-data", storage_type="session"),
+            dcc.Store(id="thresholds", storage_type="session"),
             dcc.Store(id="peaks-parameters", storage_type="session"),
             dcc.Store(id="vo2-data", storage_type="session"),
             dcc.Store(id="analytics", storage_type="session"),
+            dcc.Store(
+                id="pio-template", data="plotly_dark_custom", storage_type="session"
+            ),
             dcc.Location(id="refresh", refresh=True),
         ]
     )
 
-    get_modal_callbacks(test_page, d)
-    get_figure_callbacks(test_page, d)
     get_dropdown_callbacks(test_page, d)
+    get_modal_callbacks(test_page, d)
+    get_store_callbacks(test_page, d)
+    get_figure_callbacks(test_page, d)
     get_threshold_callbacks(test_page, d)
     get_div_callbacks(test_page, d)
     get_p_callbacks(test_page, d)
     get_button_callbacks(test_page, d)
-    get_store_callbacks(test_page, d)
+    get_datatable_callbacks(test_page, d)
 
     return test_page

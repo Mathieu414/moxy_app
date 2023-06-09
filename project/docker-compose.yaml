@@ -1,0 +1,14 @@
+version : "0.1"
+name : moxy_app
+services :
+    app:
+      build :
+        context : .
+        dockerfile : Dockerfile.dev
+      restart : always
+      volumes : 
+        - ./app:/usr/src/app/
+      ports:
+        - 8050:8050
+
+    

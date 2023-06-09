@@ -28,19 +28,20 @@ def get_modal_callbacks(page, debug=True):
 
     @page.callback(
         Output("modal_content", "children"),
-        [Input("data-upload", "data"), Input("test-choice", "value")],
+        [Input("raw-data", "data"), Input("test-choice", "value")],
+        [State("muscle-groups", "data")],
     )
-    def set_modal_content(data, value):
+    def set_modal_content(data, value, muscle_groups):
         content = []
         if (data is not None) and (value is not None):
-            for i, n in enumerate(data[value][1][0]):
+            for i, n in enumerate(list(muscle_groups[value][0].keys())):
                 content.append(
                     html.Label(
                         [
-                            ("Moxy n° " + data[value][1][1][i]),
+                            ("Moxy n° " + muscle_groups[value][1][i]),
                             dcc.Input(
                                 id={"type": "muscle-input", "index": str(i)},
-                                name=("moxy" + data[value][1][1][i]),
+                                name=("moxy" + muscle_groups[value][1][i]),
                                 type="text",
                                 value=n,
                                 debounce=True,

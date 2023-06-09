@@ -3,41 +3,57 @@ import pandas as pd
 
 
 def get_threshold_callbacks(page, debug=True):
-    @ page.callback(
-        [Output('seuil1-p', 'value'),
-         Output('seuil2-p', 'value'),
-         Output('seuil1', 'disabled'),
-         Output('seuil2', 'disabled'),
-         Output('seuil1', 'value'),
-         Output('seuil2', 'value')],
-        Input('test-choice', 'value'),
-        State('seuils', 'data'),
-        State("data-upload", 'data'),
-        prevent_initial_call=True
+    @page.callback(
+        [
+            Output("threshold1-p", "value"),
+            Output("threshold2-p", "value"),
+            Output("threshold1", "disabled"),
+            Output("threshold2", "disabled"),
+            Output("threshold1", "value"),
+            Output("threshold2", "value"),
+        ],
+        Input("test-choice", "value"),
+        State("thresholds", "data"),
+        State("raw-data", "data"),
+        prevent_initial_call=True,
     )
-    def check_thresholds(value, seuils, data):
+    def check_thresholds(value, thresholds, data):
         if debug:
             print("--check_thresholds--")
-            print(seuils)
-        if (data is not None) and (value is not None) and ("HR[bpm]" in data[value][0].columns):
-            seuils = seuils[value]
+            print(thresholds)
+        if (
+            (data is not None)
+            and (value is not None)
+            and ("HR[bpm]" in data[value].columns)
+        ):
+            thresholds = thresholds[value]
             if debug:
                 print("threshold enabled")
-            value_seuil1 = seuils[0]
-            value_seuil2 = seuils[1]
-            return [value_seuil1, value_seuil2, False, False, value_seuil1, value_seuil2]
+            value_threshold1 = thresholds[0]
+            value_threshold2 = thresholds[1]
+            return [
+                value_threshold1,
+                value_threshold2,
+                False,
+                False,
+                value_threshold1,
+                value_threshold2,
+            ]
         else:
             if debug:
-                print("seuils or value is None")
+                print("thresholds or value is None")
             return [None, None, True, True, None, None]
 
-    @page.callback([Output('prominence', 'value'),
-                    Output('width', 'value'),
-                    Output('removed_width_left', 'value'),
-                    Output('removed_width_right', 'value')],
-                   Input('test-choice', 'value'),
-                   State('peaks-parameters', 'data')
-                   )
+    @page.callback(
+        [
+            Output("prominence", "value"),
+            Output("width", "value"),
+            Output("removed_width_left", "value"),
+            Output("removed_width_right", "value"),
+        ],
+        Input("test-choice", "value"),
+        State("peaks-parameters", "data"),
+    )
     def set_value_detection_input(value, data):
         if debug:
             print("--set_value_detection_input--")

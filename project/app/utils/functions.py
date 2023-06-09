@@ -20,7 +20,7 @@ def df_find_peaks(df, prominence=8, width=20):
         1D array: index location of the peaks
     """
     print("--df_find_peaks--")
-    return find_peaks(- df.to_numpy(), prominence=prominence, width=width)[0]
+    return find_peaks(-df.to_numpy(), prominence=prominence, width=width)[0]
 
 
 def cut_peaks(df, range_right=20, range_left=20, prominence=8, width=20):
@@ -43,16 +43,16 @@ def cut_peaks(df, range_right=20, range_left=20, prominence=8, width=20):
     if len(peaks) > 0:
         list_levels = []
         # check for index problems at the begining
-        if (peaks[0]-range_left) >= 0:
-            df.iloc[peaks[0]-range_left:peaks[0]+range_right] = np.nan
-            list_levels.append(df.iloc[:peaks[0]+range_right])
+        if (peaks[0] - range_left) >= 0:
+            df.iloc[peaks[0] - range_left : peaks[0] + range_right] = np.nan
+            list_levels.append(df.iloc[: peaks[0] + range_right])
         if len(peaks) >= 1:
             for i, v in enumerate(peaks[1:]):
-                df.iloc[v-range_left:v+range_right] = np.nan
-                list_levels.append(df.iloc[peaks[i]+range_right:v+range_right])
+                df.iloc[v - range_left : v + range_right] = np.nan
+                list_levels.append(df.iloc[peaks[i] + range_right : v + range_right])
         # check for index problems at the end
-        if peaks[-1]+range_right <= df.iloc[-1].name:
-            list_levels.append(df.iloc[peaks[-1]+range_right:])
+        if peaks[-1] + range_right <= df.iloc[-1].name:
+            list_levels.append(df.iloc[peaks[-1] + range_right :])
         return (list_levels, str(len(list_levels)) + " paliers détectés")
     else:
         return ([df], "Erreur : pas de pauses détectées")
@@ -96,71 +96,81 @@ def synchronise_moxy_vo2(moxy_data, vo2_df):
     """
     # remove the line with the units
     vo2_df = vo2_df.iloc[1:]
-    if 'VO2' in moxy_data.columns:
-        moxy_data = moxy_data.drop(['VO2', 'FC'], axis=1)
+    if "VO2" in moxy_data.columns:
+        moxy_data = moxy_data.drop(["VO2", "FC"], axis=1)
     print(moxy_data.columns)
-    print(vo2_df)
     # transform the time into seconds
-    vo2_df['Temps'] = (pd.to_datetime(
-        vo2_df['Temps']) - pd.to_datetime(
-        vo2_df['Temps'][1])).dt.total_seconds().round().dropna().astype(int)
-    vo2_df = vo2_df.rename(
-        columns={"Temps": "Time[s]"})
+    vo2_df["Temps"] = (
+        (pd.to_datetime(vo2_df["Temps"]) - pd.to_datetime(vo2_df["Temps"][1]))
+        .dt.total_seconds()
+        .round()
+        .dropna()
+        .astype(int)
+    )
+    vo2_df = vo2_df.rename(columns={"Temps": "Time[s]"})
     # tranform the hr into numeric values
     vo2_df["Fréquence cardiaque"] = pd.to_numeric(
-        vo2_df["Fréquence cardiaque"], errors='coerce')
+        vo2_df["Fréquence cardiaque"], errors="coerce"
+    )
     # dataframe to numpy
     x = vo2_df["Fréquence cardiaque"].to_numpy()
-    print(type(x[0]))
     y = moxy_data["HR[bpm]"].to_numpy().astype(int)
-    print(type(y[0]))
-    print(dtw(x, y))
     # using the dtw library to match the datasets
     alignment = warp(dtw(x, y), index_reference=True)
-    print(alignment)
     # replace the index with the VO2 values
     path = []
     for i, index_moxy in enumerate(alignment):
-        path.append([float(vo2_df.iloc[i]["Consommation d'Oxygène"]),
-                     x[i],
-                     moxy_data.iloc[index_moxy]["Time[s]"]])
+        path.append(
+            [
+                float(vo2_df.iloc[i]["Consommation d'Oxygène"]),
+                x[i],
+                moxy_data.iloc[index_moxy]["Time[s]"],
+            ]
+        )
     # set the index, and remove the duplicates
-    df = pd.DataFrame(
-        path, columns=["VO2", "FC", "Time[s]"]).set_index("Time[s]")
-    df = df[~df.index.duplicated(keep='first')]
+    df = pd.DataFrame(path, columns=["VO2", "FC", "Time[s]"]).set_index("Time[s]")
+    df = df[~df.index.duplicated(keep="first")]
     df = df.iloc[1:]
     # merge the two dfs
-    moxy_data = moxy_data.merge(df, how='left', on='Time[s]')
+    moxy_data = moxy_data.merge(df, how="left", on="Time[s]")
     return moxy_data
 
 
-def get_time_zones(data, seuils_muscu):
+def get_time_zones(data, muscle_groups, thresholds_muscu):
     """get the time spent in the difference muscular zones
 
     Args:
         data (list): list containing the data : in [0] a dataframe with the data, in [1] the muscle groups
-        seuils_muscu (list): list containing the different thresholds for the muscles
+        thresholds_muscu (list): list containing the different thresholds for the muscles
 
     Returns:
         list: list with zone times
     """
     print("--get-time-zones--")
-    if len(seuils_muscu) > 0:
-        print(seuils_muscu)
+    if len(thresholds_muscu) > 0:
+        print(thresholds_muscu)
         time_z1 = []
         time_z2 = []
         time_z3 = []
-        for i, m in enumerate(data[1]):
-            if len(seuils_muscu[0]) > 0:
+        for i, m in enumerate(muscle_groups):
+            if len(thresholds_muscu[0]) > 0:
                 time_z1.append(
-                    len(data[0][m][data[0][m] > seuils_muscu[0][i]].index.tolist()))
-            if len(seuils_muscu[1]) > 0:
-                if len(seuils_muscu[0]) > 0:
-                    time_z2.append(len(data[0][m][(data[0][m] <= seuils_muscu[0][i]) & (
-                        data[0][m] > seuils_muscu[1][i])].index.tolist()))
+                    len(data[m][data[m] > thresholds_muscu[0][i]].index.tolist())
+                )
+            if len(thresholds_muscu[1]) > 0:
+                if len(thresholds_muscu[0]) > 0:
+                    time_z2.append(
+                        len(
+                            data[m][
+                                (data[m] <= thresholds_muscu[0][i])
+                                & (data[m] > thresholds_muscu[1][i])
+                            ].index.tolist()
+                        )
+                    )
                 time_z3.append(
-                    len(data[0][m][data[0][m] < seuils_muscu[1][i]].index.tolist()))
-        return ([time_z1, time_z2, time_z3])
+                    len(data[m][data[m] < thresholds_muscu[1][i]].index.tolist())
+                )
+        return [time_z1, time_z2, time_z3]
     else:
         return []
 
@@ -171,37 +181,36 @@ def segments_fit(X, Y, maxcount):
 
     n = len(X)
 
-    AIC_ = float('inf')
-    BIC_ = float('inf')
+    AIC_ = float("inf")
+    BIC_ = float("inf")
     r_ = None
 
-    for count in range(1, maxcount+1):
-
+    for count in range(1, maxcount + 1):
         seg = np.full(count - 1, (xmax - xmin) / count)
 
         px_init = np.r_[np.r_[xmin, seg].cumsum(), xmax]
         py_init = np.array(
-            [Y[np.abs(X - x) < (xmax - xmin) * 0.1].mean() for x in px_init])
+            [Y[np.abs(X - x) < (xmax - xmin) * 0.1].mean() for x in px_init]
+        )
 
         def func(p):
-            seg = p[:count - 1]
-            py = p[count - 1:]
+            seg = p[: count - 1]
+            py = p[count - 1 :]
             px = np.r_[np.r_[xmin, seg].cumsum(), xmax]
             return px, py
 
         def err(p):  # This is RSS / n
             px, py = func(p)
             Y2 = np.interp(X, px, py)
-            return np.mean((Y - Y2)**2)
+            return np.mean((Y - Y2) ** 2)
 
-        r = optimize.minimize(
-            err, x0=np.r_[seg, py_init], method='Nelder-Mead')
+        r = optimize.minimize(err, x0=np.r_[seg, py_init], method="Nelder-Mead")
 
         # Compute AIC/ BIC.
         AIC = n * np.log10(err(r.x)) + 4 * count
         BIC = n * np.log10(err(r.x)) + 2 * count * np.log(n)
 
-        if ((BIC < BIC_) & (AIC < AIC_)):  # Continue adding complexity.
+        if (BIC < BIC_) & (AIC < AIC_):  # Continue adding complexity.
             r_ = r
             AIC_ = AIC
             BIC_ = BIC
@@ -212,13 +221,19 @@ def segments_fit(X, Y, maxcount):
     return func(r_.x)  # Return the last (n-1)
 
 
-def find_thresholds(seuil: int, df_filtered: list, muscle_groups: list, threshold_name: str, remove_range=5) -> list:
+def find_thresholds(
+    seuil: int,
+    df_filtered: list,
+    muscle_groups: list,
+    threshold_name: str,
+    remove_range=5,
+) -> list:
     """find the muscle threshold corresponding to the HR threshold
 
     Args:
         seuil (int): HR threshold
         df_filtered (list of pd.Dataframe): levels of the test
-        muscle_groups (list): list of muscle names
+        muscle_groups (dict): dictionnary containing the names of the muscle groups
         threshold_name (string): name of the target column corresponding with the threshold number
         remove_range (int, optional): amount of points considered around the matching value to compute the threshold. Defaults to 5.
 
@@ -230,30 +245,19 @@ def find_thresholds(seuil: int, df_filtered: list, muscle_groups: list, threshol
         print("compute the ", threshold_name)
         # iterate over the levels of the test
         for n in range(len(df_filtered)):
-            cond = (df_filtered[n]["HR[bpm]"] > df_filtered[n][threshold_name]) & (
-                df_filtered[n]["HR[bpm]"].shift(1) <= df_filtered[n][threshold_name])
+            cond = (df_filtered[n]["HR[bpm]"] > seuil) & (
+                df_filtered[n]["HR[bpm]"].shift(1) <= seuil
+            )
             if not df_filtered[n][cond].empty:
                 print(threshold_name + " found")
                 indexes = df_filtered[n][cond].index.tolist()
                 # store the 10 points around the first occurence matching the condition
-                target_muscul = df_filtered[n].loc[indexes[0] -
-                                                   remove_range: indexes[0]+remove_range]
+                target_muscul = df_filtered[n].loc[
+                    indexes[0] - remove_range : indexes[0] + remove_range
+                ]
                 # iterate over the muscle groups, and do the mean of the matching data
-                for m in muscle_groups:
-                    threshold_muscle.append(
-                        target_muscul[m].mean())
+                for m in muscle_groups.keys():
+                    threshold_muscle.append(target_muscul[m].mean())
                 # the first occurence is the relevant one, no need to go further
                 break
     return threshold_muscle
-
-
-def PrefixReverse(id: str):
-    """Removes the prefix added before the id of the component
-
-    Args:
-        id (str): string representing the id of the component
-
-    Returns:
-        str: id of the component without the prefix
-    """
-    return re.sub('^\w-', '', id)
