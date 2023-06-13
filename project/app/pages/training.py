@@ -50,7 +50,9 @@ def seance_page():
                 children=[
                     dcc.Upload(
                         id="training-upload",
-                        children=html.A("Upload File", role="button"),
+                        children=html.Button(
+                            html.B("Charger le fichier"), role="button"
+                        ),
                     ),
                     html.P(children="Session", className="menu-title"),
                     dcc.Dropdown(

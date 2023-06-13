@@ -10,8 +10,8 @@ from dash_extensions.enrich import (
 )
 import dash
 import plotly.io as pio
-from pages.analyse_test import test_page
-from pages.analyse_seance import seance_page
+from pages.test import test_page
+from pages.training import seance_page
 
 server = Flask(__name__)
 
