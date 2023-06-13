@@ -1,15 +1,15 @@
+"""
+The base for the test page. The purpose is to help analyse data coming from the effort 
+tests made at the CNSNMM. It has two main features : local analysis and global analysis (which is the main feature).
+"""
+
 from dash_extensions.enrich import (
     DashBlueprint,
     html,
     dcc,
-    callback,
-    Input,
-    Output,
-    ctx,
 )
+from dash_iconify import DashIconify
 import plotly.io as pio
-import plotly.graph_objects as go
-
 from callbacks import (
     get_store_callbacks,
     get_figure_callbacks,
@@ -21,7 +21,6 @@ from callbacks import (
     get_modal_callbacks,
     get_datatable_callbacks,
 )
-
 from components import (
     PrintDialog,
     MuscleGroups,
@@ -31,8 +30,8 @@ from components import (
 )
 
 pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
-pio.templates["plotly_dark_custom"]["layout"]["paper_bgcolor"] = "#141e26"
-pio.templates["plotly_dark_custom"]["layout"]["plot_bgcolor"] = "#141e26"
+pio.templates["plotly_dark_custom"]["layout"]["paper_bgcolor"] = "#181c25"
+pio.templates["plotly_dark_custom"]["layout"]["plot_bgcolor"] = "#181c25"
 pio.templates["plotly_dark_custom"]["layout"]["dragmode"] = "select"
 pio.templates.default = "plotly_dark_custom"
 
@@ -57,6 +56,7 @@ def test_page():
                 className="center",
                 id="test-header-div",
             ),
+            # test selection
             html.Article(
                 children=[
                     html.H3("Selection du test"),
@@ -67,40 +67,34 @@ def test_page():
             # menu
             html.Article(
                 children=[
-                    html.P(html.B("1. Charger le fichier DataAverage.xlsx/.csv")),
+                    # test upload
                     dcc.Upload(
                         id="test-data-upload",
-                        children=html.Button("Upload"),
+                        children=html.Button(
+                            html.B("Charger le fichier de données Moxy")
+                        ),
                         className="inputs",
+                        accept="text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        max_size=1000000,
                     ),
+                    html.P(
+                        children=[
+                            DashIconify(icon="carbon:information"),
+                            html.Small("Le fichier doit être un csv ou un xlsx"),
+                        ]
+                    ),
+                    # data erase button
                     html.Button(
                         "Effacer les données ",
-                        className="contrast outline",
+                        className="contrast outline error",
                         id="clear-button",
                         n_clicks=0,
                     ),
                 ],
                 className="menu no-print",
             ),
+            # muscle name modal
             MuscleGroups,
-            # vo2 upload
-            html.Article(
-                children=[
-                    html.P(html.B(id="vo2_p")),
-                    dcc.Upload(
-                        id="vo2-upload",
-                        children=html.Button(
-                            children="Upload",
-                            id="vo2_button",
-                            disabled=True,
-                            className="secondary outline",
-                        ),
-                        multiple=False,
-                        className="inputs",
-                    ),
-                ],
-                className="menu no-print",
-            ),
             FullGraph,
             GlobalAnalysis,
             LocalAnalysis,

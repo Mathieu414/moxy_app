@@ -26,9 +26,9 @@ def get_datatable_callbacks(page, debug=True):
             df = pd.DataFrame.from_dict(
                 parameters[str(value)],
                 orient="index",
-                columns=["Intercept", "Coefficient"],
+                columns=["Intercept (%)", "Pente (%/s)"],
             )
-            df = df.round(2)
+            df = df.round(3)
             df.reset_index(inplace=True, names=["Groupes musculaires"])
             print(df)
             return df.to_dict("records")

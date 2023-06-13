@@ -1,4 +1,5 @@
 from dash import html, dcc
+from dash_iconify import DashIconify
 
 ZoomedGraph = html.Div(
     id="zoom-chart-div",
@@ -85,77 +86,63 @@ ZoomedGraph = html.Div(
             ),
             html.Hr(),
             html.Div(
-                [
+                children=[
                     html.Div(
-                        html.P("Paramètres de detection des pauses:"),
-                        className="col-sm-4",
-                    ),
-                ],
-                className="row no-print",
-            ),
-            html.Div(
-                [
-                    html.Div(
-                        html.Label(
-                            [
-                                "Hauteur (bpm)",
-                                dcc.Input(id="prominence", type="number"),
-                            ]
-                        ),
-                        className="col-sm-3",
-                    ),
-                    html.Div(
-                        html.Label(
-                            [
-                                "Largeur (s)",
-                                dcc.Input(id="width", type="number"),
-                            ]
-                        ),
-                        className="col-sm-3",
-                    ),
-                ],
-                className="row no-print",
-            ),
-            html.Div(
-                [
-                    html.Div(
-                        html.P("Taille de la zone à enlever : "),
-                        className="col-sm-4",
-                    ),
-                ],
-                className="row no-print",
-            ),
-            html.Div(
-                [
-                    html.Label(
                         [
-                            "Retirer à gauche (s)",
-                            dcc.Input(
-                                id="removed_width_left",
-                                type="number",
+                            html.Div(
+                                html.P("Paramètres de detection des pauses:"),
+                            ),
+                            html.Label(
+                                [
+                                    "Hauteur (bpm)",
+                                    dcc.Input(id="prominence", type="number"),
+                                ],
+                            ),
+                            html.Label(
+                                [
+                                    "Largeur (s)",
+                                    dcc.Input(id="width", type="number"),
+                                ]
                             ),
                         ],
-                        className="col-sm-3",
+                        className="no-print",
                     ),
-                    html.Label(
+                    html.Div(
                         [
-                            "Retirer à droite (s)",
-                            dcc.Input(
-                                id="removed_width_right",
-                                type="number",
+                            html.Div(
+                                html.P("Taille de la zone à enlever : "),
+                            ),
+                            html.Label(
+                                [
+                                    "Retirer à gauche (s)",
+                                    dcc.Input(
+                                        id="removed_width_left",
+                                        type="number",
+                                    ),
+                                ]
+                            ),
+                            html.Label(
+                                [
+                                    "Retirer à droite (s)",
+                                    dcc.Input(
+                                        id="removed_width_right",
+                                        type="number",
+                                    ),
+                                ],
+                            ),
+                            html.Button(
+                                [
+                                    DashIconify(icon="carbon:filter"),
+                                    html.B("Filtrer les données"),
+                                ],
+                                id="filter-selection-button",
+                                n_clicks=0,
                             ),
                         ],
-                        className="col-sm-3",
-                    ),
-                    html.Div("", className="col-sm-3"),
-                    html.Button(
-                        html.B("5.Filtrer les données"),
-                        className="contrast outline col-sm-3",
-                        id="filter-selection-button",
-                        n_clicks=0,
+                        className="no-print",
                     ),
                 ],
-                className="row no-print",
+                className="grid",
             ),
             html.Div(id="div-error-filter"),
         ]

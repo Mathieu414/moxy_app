@@ -85,11 +85,12 @@ def get_figure_callbacks(page, debug=True):
         if debug:
             print("--display_filtered_data--")
             print(thresholds)
+            print(analysis_type)
+            print(value)
         fig = go.Figure()
         if (
             (value is not None)
             and (filtered_data is not None)
-            and len(thresholds) <= value + 1
             and str(value) in analysis_type
             and analysis_type[str(value)] == "global-analysis-button"
         ):

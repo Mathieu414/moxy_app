@@ -35,7 +35,7 @@ def get_store_callbacks(page, debug=True):
     )
     def raw_data_upload(contents, filenames, clear, stored_raw_data):
         if (ctx.triggered_id == "test-data-upload") and (
-            ("DataAverage.xlsx" in filenames) or ("DataAverage.csv" in filenames)
+            ("xlsx" in filenames) or ("csv" in filenames)
         ):
             return store_raw_data(
                 contents=contents, filenames=filenames, stored_raw_data=stored_raw_data
@@ -221,6 +221,10 @@ def get_store_callbacks(page, debug=True):
         selected_data,
         value,
     ):
+        """
+        Callback to handle the data selection in case of the global analysis. Can be triggered by the global-analysis-button, by the VO2 data import
+        or by the clear-button.
+        """
         if debug:
             print("--store_selected_data--")
 
@@ -235,9 +239,10 @@ def get_store_callbacks(page, debug=True):
 
         if (
             ctx.triggered_id == "vo2-data"
-            and selected_data is not None
+            and stored_selected_data is not None
             and (value in stored_selected_data)
         ):
+            print("synchronise VO2")
             stored_selected_data[value] = fc.synchronise_moxy_vo2(
                 stored_selected_data[value], vo2_data[value]
             )
@@ -280,6 +285,11 @@ def get_store_callbacks(page, debug=True):
         removed_width_left,
         removed_width_right,
     ):
+        """
+        Callback to handle the filtering of the data. This callback is triggered either when the user clicks on the filtering button,
+        or when new selected-data is produced. This last case occurs typically when the user imports VO2 data.
+        There is also an validation message, but only for the button case.
+        """
         if debug:
             print("--filter_selection--")
 

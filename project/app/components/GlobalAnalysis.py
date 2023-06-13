@@ -1,9 +1,12 @@
 from dash_extensions.enrich import html, dcc
+from dash_iconify import DashIconify
 from .global_analysis.ZoomedGraph import ZoomedGraph
 from .global_analysis.FilteredGraph import FilteredGraph
+from .global_analysis.VO2Upload import VO2Upload
 
 GlobalAnalysis = html.Div(
     [
+        VO2Upload,
         ZoomedGraph,
         FilteredGraph,
         # pagebreak for browser printing
@@ -31,7 +34,10 @@ GlobalAnalysis = html.Div(
             ],
         ),
         html.Button(
-            html.B("Imprimer en PDF"),
+            [
+                DashIconify(icon="carbon:printer"),
+                html.B("Imprimer en PDF"),
+            ],
             className="contrast outline",
             id="print-pdf",
         ),

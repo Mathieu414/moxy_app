@@ -10,7 +10,7 @@ LocalAnalysis = html.Div(
                 "lineHeight": "50px",
             },
             style_data={
-                "backgroundColor": "#141e26",
+                "backgroundColor": "#181c25",
                 "lineHeight": "70px",
             },
             style_cell={

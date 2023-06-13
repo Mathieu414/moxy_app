@@ -258,7 +258,11 @@ def create_trend_figure(data, muscle_groups):
     """
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+    print(data)
+
     data = checks(data, muscle_groups, None)
+
+    print(data)
 
     colors = pio.templates["plotly_dark_custom"]["layout"]["colorway"]
 
