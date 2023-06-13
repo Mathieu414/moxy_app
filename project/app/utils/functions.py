@@ -85,7 +85,8 @@ def parse_data(content, filename):
 
 
 def synchronise_moxy_vo2(moxy_data, vo2_df):
-    """Uses the dtw library to synchronise the data from the moxy device and the data from the VO2 device
+    """
+    Uses the dtw library to synchronise the data from the moxy device and the data from the VO2 device
 
     Args:
         moxy_data (pandas Dataframe): moxy data

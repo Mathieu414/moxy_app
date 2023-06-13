@@ -3,9 +3,8 @@ from dash import html, dcc
 # muscle groups modal
 MuscleGroups = html.Article(
     children=[
-        html.P(html.B("2.Définir les groupes musculaires")),
         html.Button(
-            children="Définir",
+            children=html.B("Définir les groupes musculaires"),
             id="modal_open",
             disabled=True,
             className="secondary outline",
@@ -18,8 +17,8 @@ MuscleGroups = html.Article(
                             [
                                 html.A(className="close", id="modal_abort"),
                                 html.H2("Définir les groupes musulaires"),
-                                html.H3(
-                                    "Vérifier les groupes musculaires correspondant aux numéro de Moxy sur le fichier Details.txt"
+                                html.B(
+                                    "Vérifier les groupes musculaires correspondant aux numéros de Moxy sur le fichier Details.txt"
                                 ),
                             ],
                             className="headings",

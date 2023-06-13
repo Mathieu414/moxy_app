@@ -24,9 +24,9 @@ def get_div_callbacks(page, debug=True):
         )
         pio.templates["plotly_dark_custom"]["data"]["histogram2dcontour"][0][
             "colorscale"
-        ] = ([0, "#141e26"], [1, "#636efa "])
+        ] = ([0, "#181c25"], [1, "#636efa "])
 
-        if (value is not None) and (data is not None) and (data[value] is not None):
+        if (value is not None) and (data is not None) and (value in data):
             data_filtered = pd.concat(data[value])
             if "HR[bpm]" in data_filtered.columns:
                 children = [
@@ -145,7 +145,7 @@ def get_div_callbacks(page, debug=True):
                         "lineHeight": "50px",
                     },
                     style_data={
-                        "backgroundColor": "#141e26",
+                        "backgroundColor": "#181c25",
                         "lineHeight": "70px",
                     },
                     style_cell={

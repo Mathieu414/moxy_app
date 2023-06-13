@@ -22,8 +22,8 @@ def index_redirect():
 
 
 pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
-pio.templates["plotly_dark_custom"]["layout"]["paper_bgcolor"] = "#141e26"
-pio.templates["plotly_dark_custom"]["layout"]["plot_bgcolor"] = "#141e26"
+pio.templates["plotly_dark_custom"]["layout"]["paper_bgcolor"] = "#181c25"
+pio.templates["plotly_dark_custom"]["layout"]["plot_bgcolor"] = "#181c25"
 pio.templates["plotly_dark_custom"]["layout"]["dragmode"] = "select"
 
 
