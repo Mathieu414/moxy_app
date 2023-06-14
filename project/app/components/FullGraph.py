@@ -2,6 +2,12 @@ from dash import html, dcc
 import plotly.graph_objects as go
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
+import plotly.io as pio
+
+pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
+pio.templates["plotly_dark_custom"]["layout"]["paper_bgcolor"] = "#181c25"
+pio.templates["plotly_dark_custom"]["layout"]["plot_bgcolor"] = "#181c25"
+pio.templates.default = "plotly_dark_custom"
 
 FullGraph = html.Article(
     children=[
@@ -20,9 +26,7 @@ FullGraph = html.Article(
         ),
         dcc.Loading(
             html.Div(
-                children=dcc.Graph(
-                    id="test-chart", figure=go.Figure(), selectedData=None
-                ),
+                children=dcc.Graph(id="test-chart", selectedData=None),
                 className="card",
             )
         ),

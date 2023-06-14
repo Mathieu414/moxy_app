@@ -171,3 +171,13 @@ def get_div_callbacks(page, debug=True):
             return content
         else:
             return None
+
+    @page.callback(
+        Output("first-choices-div", "className"),
+        Input("test-choice", "value"),
+    )
+    def hide_first_div(value):
+        if value is None:
+            return "hide"
+        else:
+            return None
