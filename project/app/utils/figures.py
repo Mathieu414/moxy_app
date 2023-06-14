@@ -293,7 +293,7 @@ def create_trend_figure(data, muscle_groups):
             )
         )
 
-        parameters[n] = (model.intercept_, model.coef_[0])
+        parameters[n] = (sum(y_pred) / len(y_pred), model.coef_[0])
 
     fig.update_traces(marker_size=1)
     fig.update_xaxes(showgrid=False, title="Temps (s)")
