@@ -71,11 +71,11 @@
 
 .Select--single > .Select-control .Select-value,
 .Select-placeholder {
-  line-height: 48px;
+  line-height: 48px !important;
 }
 
 .Select--multi .Select-value-label {
-  line-height: 32px;
+  line-height: 32px !important;
 }
 button {
   width: 100%;
@@ -88,16 +88,6 @@ button {
   padding-left: 20%;
   padding-right: 20%;
   text-align: center;
-}
-.menu-title {
-  margin-top: 20px;
-  margin-bottom: 0;
-  font-weight: bold;
-}
-.small-text {
-  font-size: small;
-  margin-bottom: 5px;
-  text-align: right;
 }
 .error {
   color: var(--pico-del-color);
@@ -177,4 +167,12 @@ dialog article .close {
 
 .iconify {
   margin: 0px 2px 3px 2px;
+}
+
+a:link {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
 }

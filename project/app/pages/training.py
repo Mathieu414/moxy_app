@@ -11,8 +11,11 @@ from dash_extensions.enrich import (
     dcc,
     DashBlueprint,
     ServersideOutput,
+    ctx,
 )
 
+import dash_mantine_components as dmc
+from dash_iconify import DashIconify
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
@@ -39,7 +42,7 @@ def seance_page():
                 children=[
                     html.H1(children="Séance", className="center"),
                     html.P(
-                        children="Analyse d'une séance à partir d'un fichier .csv",
+                        children="Analyse d'une séance à partir d'un seul moxy",
                         className="center",
                     ),
                 ],
@@ -51,40 +54,46 @@ def seance_page():
                     dcc.Upload(
                         id="training-upload",
                         children=html.Button(
-                            html.B("Charger le fichier"), role="button"
+                            children=[
+                                dmc.Tooltip(
+                                    label="Chargez un fichier extrait directement d'un seul moxy",
+                                    children=[DashIconify(icon="carbon:information")],
+                                    multiline=True,
+                                    width=220,
+                                ),
+                                "Charger le fichier",
+                            ],
                         ),
+                        accept="text/csv",
+                        max_size=1000000,
                     ),
-                    html.P(children="Session", className="menu-title"),
-                    dcc.Dropdown(
-                        id="session-filter",
+                    html.P(
+                        children=[
+                            html.B("Session"),
+                            dcc.Dropdown(
+                                id="session-filter",
+                            ),
+                        ]
+                    ),
+                    # data erase button
+                    html.Button(
+                        "Effacer les données ",
+                        className="contrast outline error",
+                        id="training-clear-button",
+                        n_clicks=0,
                     ),
                 ],
                 className="menu",
             ),
             # graphs
-            html.Div(
+            html.Article(
                 children=[
                     html.H2("Courbe de la session entière"),
-                    html.P(
-                        "Sélectionnez un champ de données avec l'outil sélection en haut à droite"
-                    ),
-                    html.Div(
-                        children=dcc.Graph(id="moxy-chart", figure=go.Figure()),
-                        className="card",
-                    ),
+                    html.P("Sélectionnez un champ de données avec l'outil sélection"),
+                    dcc.Graph(id="moxy-chart", figure=go.Figure()),
+                    html.H1("Visualisation de la sélection"),
+                    dcc.Graph(id="zoom-chart", figure=go.Figure()),
                 ],
-                className="wrapper",
-            ),
-            html.Div(
-                children=[
-                    html.Article(
-                        children=[
-                            html.H1("Visualisation de la sélection"),
-                            dcc.Graph(id="zoom-chart", figure=go.Figure()),
-                        ]
-                    )
-                ],
-                className="wrapper",
             ),
             # dcc.Store stores the intermediate value
             dcc.Store(id="file-data", storage_type="session"),
@@ -93,41 +102,55 @@ def seance_page():
 
     @callback(
         ServersideOutput("file-data", "data"),
-        Input("training-upload", "contents"),
+        [
+            Input("training-upload", "contents"),
+            Input("training-clear-button", "n_clicks"),
+        ],
         prevent_initial_call=True,
     )
-    def update_data(uploadData):
-        content_type, content_string = uploadData.split(",")
-        decoded = base64.b64decode(content_string)
+    def update_data(uploadData, clear):
+        if ctx.triggered_id == "training-upload":
+            content_type, content_string = uploadData.split(",")
+            decoded = base64.b64decode(content_string)
 
-        data = pd.read_csv(io.StringIO(decoded.decode("utf-8")), header=2)
+            data = pd.read_csv(io.StringIO(decoded.decode("utf-8")), header=2)
 
-        # get the current year
-        today = datetime.date.today()
-        year = today.year
+            # get the current year
+            today = datetime.date.today()
+            year = today.year
 
-        # format the date
-        data["Date"] = pd.to_datetime(
-            str(year) + "-" + data["mm-dd"] + "-" + data["hh:mm:ss"],
-            format="%Y-%m-%d-%H:%M:%S",
-        )
+            # format the date
+            data["Date"] = pd.to_datetime(
+                str(year) + "-" + data["mm-dd"] + "-" + data["hh:mm:ss"],
+                format="%Y-%m-%d-%H:%M:%S",
+            )
 
-        return data
+            return data
+        if ctx.triggered_id == "training-clear-button":
+            return None
+        else:
+            raise PreventUpdate
 
     @callback(
         Output("session-filter", "options"),
-        Output("session-filter", "value"),
         Input("file-data", "data"),
     )
     def update_dropdown(data):
-        if data:
+        if data is not None:
             options = [
                 {"label": session, "value": session}
                 for session in np.sort(data["Session Ct"].unique())
             ]
-            return options, data["Session Ct"][0]
+            return options
         else:
-            raise PreventUpdate
+            return {}
+
+    @callback(
+        Output("session-filter", "value"),
+        Input("training-clear-button", "n_clicks"),
+    )
+    def clear_value(clear_button):
+        return None
 
     @callback(
         Output("moxy-chart", "figure"),
@@ -135,31 +158,35 @@ def seance_page():
         State("file-data", "data"),
     )
     def update_charts(session, data):
-        mask = data["Session Ct"] == session
-        filtered_data = data.loc[mask, :]
+        if session is not None:
+            mask = data["Session Ct"] == session
+            filtered_data = data.loc[mask, :]
 
-        fig = px.scatter(filtered_data, x="Date", y="SmO2 Live")
-        fig.update_traces(
-            mode="lines+markers",
-            hovertemplate="%{y:.2f}%<extra></extra>",
-            marker_size=1,
-        )
-        fig.update_xaxes(showgrid=False)
+            fig = px.scatter(filtered_data, x="Date", y="SmO2 Live")
+            fig.update_traces(
+                mode="lines+markers",
+                hovertemplate="%{y:.2f}%<extra></extra>",
+                marker_size=1,
+            )
+            fig.update_xaxes(showgrid=False)
 
-        fig.update_yaxes(type="linear")
+            fig.update_yaxes(type="linear")
 
-        fig.update_layout(clickmode="event+select")
-        return fig
+            fig.update_layout(clickmode="event+select")
+            return fig
+        else:
+            return go.Figure()
 
     @callback(
         Output("zoom-chart", "figure"),
         Input("moxy-chart", "selectedData"),
+        Input("session-filter", "value"),
         State("file-data", "data"),
         prevent_initial_call=True,
     )
-    def display(selectedData, data):
+    def display(selectedData, session, data):
         selected_dates = []
-        if selectedData and selectedData["points"]:
+        if selectedData and selectedData["points"] and session is not None:
             for point in selectedData["points"]:
                 selected_dates.append(point["x"])
             filtered_df = data.query("Date == @selected_dates")
@@ -186,6 +213,6 @@ def seance_page():
             fig2.update_layout(clickmode="event+select")
             return fig2
         else:
-            raise PreventUpdate
+            return go.Figure()
 
     return seance_page

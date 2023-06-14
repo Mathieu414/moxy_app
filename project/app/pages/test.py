@@ -36,7 +36,7 @@ pio.templates["plotly_dark_custom"]["layout"]["dragmode"] = "select"
 pio.templates.default = "plotly_dark_custom"
 
 
-def test_page():
+def test_page() -> DashBlueprint:
     test_page = DashBlueprint()
 
     d = True
@@ -50,7 +50,7 @@ def test_page():
                 children=[
                     html.H1(children="Test VO2", id="title"),
                     html.P(
-                        children="Application pour analyser les données moxy d'un test VO2",
+                        children="Analyser des données moxy d'un test VO2",
                     ),
                 ],
                 className="center",
@@ -60,7 +60,7 @@ def test_page():
             html.Article(
                 children=[
                     html.H3("Selection du test"),
-                    dcc.Dropdown(id="test-choice", placeholder="Selectionner le test"),
+                    dcc.Dropdown(id="test-choice", searchable=False),
                 ],
                 className="menu no-print",
             ),
@@ -93,9 +93,14 @@ def test_page():
                 ],
                 className="menu no-print",
             ),
-            # muscle name modal
-            MuscleGroups,
-            FullGraph,
+            html.Div(
+                [
+                    MuscleGroups,
+                    FullGraph,
+                ],
+                id="first-choices-div",
+                className="hide",
+            ),
             GlobalAnalysis,
             LocalAnalysis,
             PrintDialog,
