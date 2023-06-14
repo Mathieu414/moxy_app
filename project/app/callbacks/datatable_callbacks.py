@@ -26,7 +26,7 @@ def get_datatable_callbacks(page, debug=True):
             df = pd.DataFrame.from_dict(
                 parameters[str(value)],
                 orient="index",
-                columns=["Intercept (%)", "Pente (%/s)"],
+                columns=["Moyenne (%)", "Pente (%/s)"],
             )
             df = df.round(3)
             df.reset_index(inplace=True, names=["Groupes musculaires"])
