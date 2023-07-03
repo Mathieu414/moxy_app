@@ -1,4 +1,4 @@
-from dash_extensions.enrich import Input, Output, callback, State
+from dash_extensions.enrich import Input, Output, callback, State, dcc, ServersideOutput
 import pandas as pd
 import utils.figures as figures
 import plotly.graph_objects as go
@@ -128,8 +128,8 @@ def get_figure_callbacks(page, debug=True):
         return fig
 
     @page.callback(
-        Output("trend-chart", "figure"),
-        Output("trend-parameters", "data"),
+        Output("trend-tabs", "children"),
+        ServersideOutput("trend-parameters", "data"),
         [
             Input("test-choice", "value"),
             Input("trend-data", "data"),
@@ -145,7 +145,9 @@ def get_figure_callbacks(page, debug=True):
     ):
         if debug:
             print("--display_trend_data--")
+            print(trend_data)
         fig = go.Figure()
+        children = []
         if (
             (value is not None)
             and (trend_data is not None)
@@ -155,10 +157,44 @@ def get_figure_callbacks(page, debug=True):
             if debug:
                 print("create trend figure")
             fig, parameters = figures.create_trend_figure(
-                trend_data[value], muscle_groups[value][0]
+                trend_data[value][0], muscle_groups[value][0]
             )
+            children.append(
+                dcc.Tab(
+                    children=dcc.Graph(figure=fig),
+                    label="Palier 1",
+                    className="custom-tab",
+                    selected_className="custom-tab--selected",
+                ),
+            )
+            columns = []
+            for muscle in parameters[0]:
+                columns.extend([(muscle, "%"), (muscle, "%/s")])
+            mutli_col = pd.MultiIndex.from_tuples(columns)
+            print(parameters[1])
+            parameters_df = pd.DataFrame(
+                [parameters[1]], index=["Palier 1"], columns=mutli_col
+            )
+            if len(trend_data[value]) > 1:
+                for i, level in enumerate(trend_data[value][1:]):
+                    fig, parameters = figures.create_trend_figure(
+                        level, muscle_groups[value][0]
+                    )
+                    children.append(
+                        dcc.Tab(
+                            children=dcc.Graph(figure=fig),
+                            label="Palier " + str(i + 2),
+                            className="custom-tab",
+                            selected_className="custom-tab--selected",
+                        ),
+                    )
+                    parameters_df = parameters_df.append(
+                        pd.Series(
+                            parameters[1], index=mutli_col, name="Palier " + str(i + 2)
+                        )
+                    )
             if stored_trend_parameters is not None:
-                stored_trend_parameters[value] = parameters
+                stored_trend_parameters[value] = parameters_df
             else:
-                stored_trend_parameters = {value: parameters}
-        return fig, stored_trend_parameters
+                stored_trend_parameters = {value: parameters_df}
+        return children, stored_trend_parameters

@@ -6,8 +6,9 @@ TrendGraph = html.Div(
         children=[
             html.H2("Tendance locale", className="center"),
             dcc.Loading(
-                dcc.Graph(
-                    id="trend-chart",
+                dcc.Tabs(
+                    id="trend-tabs",
+                    parent_className="custom-tabs",
                 )
             ),
         ]
