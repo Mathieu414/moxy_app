@@ -515,7 +515,7 @@ def get_store_callbacks(page, debug=True):
         ],
         [
             State("raw-data", "data"),
-            State("selected-data", "data"),
+            State("trend-data", "data"),
             State("test-chart", "selectedData"),
             State("test-choice", "value"),
         ],
@@ -525,7 +525,7 @@ def get_store_callbacks(page, debug=True):
         btn,
         clear,
         stored_raw_data,
-        stored_selected_data,
+        stored_trend_data,
         selected_data,
         value,
     ):
@@ -533,12 +533,11 @@ def get_store_callbacks(page, debug=True):
             print("--store_trend_data--")
 
         if ctx.triggered_id == "local-analysis-button" and selected_data is not None:
-            return chart_selection(
+            return chart_trend_selection(
                 selected_data=selected_data,
-                stored_selected_data=stored_selected_data,
+                stored_trend_data=stored_trend_data,
                 raw_data=stored_raw_data,
                 value=value,
-                vo2_data=None,
             )
 
         if ctx.triggered_id == "clear-button":
@@ -680,6 +679,31 @@ def chart_selection(
         else:
             stored_selected_data[value] = data
             return stored_selected_data
+
+
+def chart_trend_selection(selected_data, stored_trend_data, raw_data, value):
+    if selected_data and selected_data["points"]:
+        data = raw_data[value]
+        selected_time = [[selected_data["points"][0]["x"]]]
+        print(selected_time)
+        for i, point in enumerate(selected_data["points"]):
+            if point["curveNumber"] == 0:
+                # check if there is a break in time corresponding to a different selection area
+                if i > 0 and selected_data["points"][i - 1]["x"] == (point["x"] - 1):
+                    # if it is not a new area, append to the last list
+                    selected_time[-1].append(point["x"])
+                elif i > 0:
+                    # if it is, create a new list
+                    selected_time.append([point["x"]])
+        selected_time = sorted(selected_time, key=lambda x: x[0])
+        new_data = []
+        for list in selected_time:
+            new_data.append(data.query("`Time[s]` == @list"))
+        if stored_trend_data is None:
+            return {value: new_data}
+        else:
+            stored_trend_data[value] = new_data
+            return stored_trend_data
 
 
 def set_error_message_filter(value, data, message, result):

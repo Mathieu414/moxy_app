@@ -122,6 +122,9 @@ def create_figure(data, muscle_groups, value, thresholds, linear_reg=False):
         clickmode="event+select",
         height=500,
         margin=dict(l=20, r=20, t=30, b=20),
+        font=dict(
+            size=15,
+        ),
     )
 
     return fig
@@ -196,6 +199,9 @@ def create_filtered_figure(data, muscle_groups, value, thresholds):
         clickmode="event+select",
         height=500,
         margin=dict(l=20, r=20, t=30, b=20),
+        font=dict(
+            size=15,
+        ),
     )
 
     return fig
@@ -238,6 +244,9 @@ def create_vo2_figure(data, muscle_groups):
             yaxis_title="Desoxygénation (%)",
             height=500,
             margin=dict(l=20, r=20, t=30, b=20),
+            font=dict(
+                size=15,
+            ),
         )
 
     return fig
@@ -262,11 +271,9 @@ def create_trend_figure(data, muscle_groups):
 
     data = checks(data, muscle_groups, None)
 
-    print(data)
-
     colors = pio.templates["plotly_dark_custom"]["layout"]["colorway"]
 
-    parameters = {}
+    parameters = [[], []]
 
     for i, n in enumerate(list(muscle_groups.values())):
         fig.add_trace(
@@ -293,7 +300,8 @@ def create_trend_figure(data, muscle_groups):
             )
         )
 
-        parameters[n] = (sum(y_pred) / len(y_pred), model.coef_[0])
+        parameters[0].append(n)
+        parameters[1].extend([sum(y_pred) / len(y_pred), model.coef_[0]])
 
     fig.update_traces(marker_size=1)
     fig.update_xaxes(showgrid=False, title="Temps (s)")
@@ -304,6 +312,9 @@ def create_trend_figure(data, muscle_groups):
         clickmode="event+select",
         height=500,
         margin=dict(l=20, r=20, t=30, b=20),
+        font=dict(
+            size=15,
+        ),
     )
 
     return fig, parameters
