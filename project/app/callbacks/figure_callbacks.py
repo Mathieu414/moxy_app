@@ -1,4 +1,4 @@
-from dash_extensions.enrich import Input, Output, callback, State, dcc, ServersideOutput
+from dash_extensions.enrich import Input, Output, callback, State, dcc, Serverside
 import pandas as pd
 import utils.figures as figures
 import plotly.graph_objects as go
@@ -129,7 +129,7 @@ def get_figure_callbacks(page, debug=True):
 
     @page.callback(
         Output("trend-tabs", "children"),
-        ServersideOutput("trend-parameters", "data"),
+        Output("trend-parameters", "data"),
         [
             Input("test-choice", "value"),
             Input("trend-data", "data"),
@@ -197,4 +197,4 @@ def get_figure_callbacks(page, debug=True):
                 stored_trend_parameters[value] = parameters_df
             else:
                 stored_trend_parameters = {value: parameters_df}
-        return children, stored_trend_parameters
+        return children, Serverside(stored_trend_parameters)

@@ -3,7 +3,8 @@ __pycache__/
 *.pyc
 export/
 cache-directory/
-file_system_store/
+file_system_backend/
 *.tex
 *.pdf
+*.log
 .vscode/

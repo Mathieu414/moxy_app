@@ -10,7 +10,7 @@ from dash_extensions.enrich import (
     html,
     dcc,
     DashBlueprint,
-    ServersideOutput,
+    Serverside,
     ctx,
 )
 
@@ -101,7 +101,7 @@ def seance_page():
     )
 
     @callback(
-        ServersideOutput("file-data", "data"),
+        Output("file-data", "data"),
         [
             Input("training-upload", "contents"),
             Input("training-clear-button", "n_clicks"),
@@ -125,7 +125,7 @@ def seance_page():
                 format="%Y-%m-%d-%H:%M:%S",
             )
 
-            return data
+            return Serverside(data)
         if ctx.triggered_id == "training-clear-button":
             return None
         else:

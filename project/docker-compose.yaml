@@ -1,4 +1,3 @@
-version : "0.1"
 name : moxy_app
 services :
     app:

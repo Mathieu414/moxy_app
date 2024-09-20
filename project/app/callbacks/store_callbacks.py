@@ -4,7 +4,7 @@ from dash_extensions.enrich import (
     State,
     ctx,
     no_update,
-    ServersideOutput,
+    Serverside,
     html,
 )
 from dash.exceptions import PreventUpdate
@@ -23,7 +23,7 @@ import base64
 def get_store_callbacks(page, debug=True):
     @page.callback(
         [
-            ServersideOutput("raw-data", "data"),
+            Output("raw-data", "data"),
         ],
         [
             Input("test-data-upload", "contents"),
@@ -69,7 +69,10 @@ def get_store_callbacks(page, debug=True):
                 [0] : dictionnary containing the initial column names as a key, and the new ones as a value.
                 [1] : list of the corresponding moxy numbers
         """
+        print("--store_muscle_groups--")
         if ctx.triggered_id == "raw-data":
+            if stored_raw_data is None:
+                raise PreventUpdate
             moxy_numbers = []
             col_names = []
             for col in stored_raw_data[-1].columns:
@@ -197,7 +200,7 @@ def get_store_callbacks(page, debug=True):
 
     @page.callback(
         [
-            ServersideOutput("selected-data", "data"),
+            Output("selected-data", "data"),
         ],
         [
             Input("global-analysis-button", "n_clicks"),
@@ -246,7 +249,7 @@ def get_store_callbacks(page, debug=True):
             stored_selected_data[value] = fc.synchronise_moxy_vo2(
                 stored_selected_data[value], vo2_data[value]
             )
-            return stored_selected_data
+            return Serverside(stored_selected_data)
 
         if ctx.triggered_id == "clear-button":
             return None
@@ -256,7 +259,7 @@ def get_store_callbacks(page, debug=True):
 
     @page.callback(
         [
-            ServersideOutput("filtered-data", "data"),
+            Output("filtered-data", "data"),
             Output("div-error-filter", "children"),
         ],
         [
@@ -322,10 +325,10 @@ def get_store_callbacks(page, debug=True):
 
                 # store the values as a dictionnary
                 if stored_filtered_data is None:
-                    return [{value: list_data_filtered}, error_div]
+                    return [Serverside({value: list_data_filtered}), error_div]
                 else:
                     stored_filtered_data[value] = list_data_filtered
-                    return [stored_filtered_data, error_div]
+                    return [Serverside(stored_filtered_data), error_div]
             else:
                 raise PreventUpdate
 
@@ -401,7 +404,7 @@ def get_store_callbacks(page, debug=True):
             raise PreventUpdate
 
     @page.callback(
-        ServersideOutput("vo2-data", "data"),
+        Output("vo2-data", "data"),
         [
             Input("vo2-upload", "contents"),
             Input("clear-button", "n_clicks"),
@@ -422,9 +425,9 @@ def get_store_callbacks(page, debug=True):
                 df = read_xml.parse_xml(decoded)
                 if stored_content:
                     stored_content[value] = df
-                    return stored_content
+                    return Serverside(stored_content)
                 else:
-                    return {value: df}
+                    return Serverside({value: df})
             else:
                 raise PreventUpdate
         if ctx.triggered_id == "clear-button":
@@ -507,7 +510,7 @@ def get_store_callbacks(page, debug=True):
 
     @page.callback(
         [
-            ServersideOutput("trend-data", "data"),
+            Output("trend-data", "data"),
         ],
         [
             Input("local-analysis-button", "n_clicks"),
@@ -568,9 +571,9 @@ def store_raw_data(contents, filenames, stored_raw_data: list):
 
     if stored_raw_data:
         stored_raw_data.append(data)
-        return stored_raw_data
+        return Serverside(stored_raw_data)
     else:
-        return [data]
+        return Serverside([data])
 
 
 def condition_modal_close(
@@ -675,10 +678,10 @@ def chart_selection(
                 vo2_df = vo2_data[value]
                 data = fc.synchronise_moxy_vo2(data, vo2_df)
         if stored_selected_data is None:
-            return {value: data}
+            return Serverside({value: data})
         else:
             stored_selected_data[value] = data
-            return stored_selected_data
+            return Serverside(stored_selected_data)
 
 
 def chart_trend_selection(selected_data, stored_trend_data, raw_data, value):
@@ -700,10 +703,10 @@ def chart_trend_selection(selected_data, stored_trend_data, raw_data, value):
         for list in selected_time:
             new_data.append(data.query("`Time[s]` == @list"))
         if stored_trend_data is None:
-            return {value: new_data}
+            return Serverside({value: new_data})
         else:
             stored_trend_data[value] = new_data
-            return stored_trend_data
+            return Serverside(stored_trend_data)
 
 
 def set_error_message_filter(value, data, message, result):
