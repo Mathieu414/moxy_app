@@ -3,9 +3,11 @@ services :
     app:
       build :
         context : .
-        dockerfile : Dockerfile
+        dockerfile : Dockerfile.dev
       restart : always
       volumes : 
         - ./app:/usr/src/app/
       ports:
-        - 8050:8050
+        - 8060:8060
+
+    

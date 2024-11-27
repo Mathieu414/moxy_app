@@ -18,4 +18,4 @@ RUN pip install -r /requirements.txt
 COPY /app /usr/src/app/
 
 # Production settings using gunicorn
-CMD gunicorn --bind 0.0.0.0:$PORT app:server
+CMD gunicorn --bind 0.0.0.0:8060 app:server
